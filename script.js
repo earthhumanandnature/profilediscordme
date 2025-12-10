@@ -8,7 +8,6 @@ class DiscordProfile {
     }
 
     init() {
-        // Lấy token từ URL (?token=...)
         var params = new URLSearchParams(window.location.search);
         var tokenFromUrl = params.get('token');
 
@@ -20,7 +19,6 @@ class DiscordProfile {
             return;
         }
 
-        // Lấy token đã lưu
         this.token = localStorage.getItem('discord_token');
         if (this.token) {
             this.loadUserData();
@@ -67,6 +65,7 @@ class DiscordProfile {
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('profile-container').style.display = 'flex';
         } catch (e) {
+            console.error(e);
             this.logout();
         }
     }
@@ -80,38 +79,39 @@ class DiscordProfile {
             : 'https://cdn.discordapp.com/embed/avatars/' + ((this.userData.discriminator || 0) % 5) + '.png';
         document.getElementById('avatar').src = avatar;
 
-        // Tên
+        // Username
         document.getElementById('username').textContent = this.userData.global_name || this.userData.username;
 
-        // Tag
+        // Discriminator
         var disc = document.getElementById('discriminator');
         if (this.userData.discriminator && this.userData.discriminator !== '0') {
             disc.textContent = '#' + this.userData.discriminator;
+            disc.style.display = 'inline';
         } else {
             disc.style.display = 'none';
         }
 
-        // Bio
+        // Bio (mô tả thật từ Discord)
         document.getElementById('bio').textContent = this.userData.bio || 'Chưa có mô tả...';
 
-        // ID
+        // User ID
         document.getElementById('user-id').textContent = this.userData.id;
 
-        // Badges (không dùng << nữa)
+        // Badges (sửa an toàn, không <<)
         var container = document.getElementById('badges');
         container.innerHTML = '';
         var flags = (this.userData.flags || 0) | (this.userData.public_flags || 0);
 
         var badgeList = [
-            { bit: 1,      name: 'Staff' },
-            { bit: 2,      name: 'Partner' },
-            { bit: 4,      name: 'HypeSquad Events' },
-            { bit: 8,      name: 'Bug Hunter Lv1' },
-            { bit: 64,     name: 'Bravery' },
-            { bit: 128,    name: 'Brilliance' },
-            { bit: 256,    name: 'Balance' },
-            { bit: 512,    name: 'Early Supporter' },
-            { bit: 16384,  name: 'Bug Hunter Lv2' },
+            { bit: 1, name: 'Staff' },
+            { bit: 2, name: 'Partner' },
+            { bit: 4, name: 'HypeSquad Events' },
+            { bit: 8, name: 'Bug Hunter Lv1' },
+            { bit: 64, name: 'Bravery' },
+            { bit: 128, name: 'Brilliance' },
+            { bit: 256, name: 'Balance' },
+            { bit: 512, name: 'Early Supporter' },
+            { bit: 16384, name: 'Bug Hunter Lv2' },
             { bit: 131072, name: 'Verified Dev' },
             { bit: 262144, name: 'Active Dev' }
         ];
@@ -125,6 +125,7 @@ class DiscordProfile {
             }
         });
 
+        // Nitro
         if (this.userData.premium_type && this.userData.premium_type > 0) {
             var nitro = document.createElement('span');
             nitro.className = 'badge nitro';
@@ -141,7 +142,6 @@ class DiscordProfile {
     }
 }
 
-// Khởi động
 document.addEventListener('DOMContentLoaded', function() {
     new DiscordProfile();
 });

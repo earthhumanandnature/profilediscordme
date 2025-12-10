@@ -1,7 +1,7 @@
 class DiscordProfile {
     constructor() {
         this.clientId = '1416381905024323755';
-        this.redirectUri = 'https://mydiscordprofile.vercel.app'; // DOMAIN MỚI CỦA BẠN
+        this.redirectUri = 'https://mydiscordprofile.vercel.app';
         this.token = null;
         this.userData = null;
 
@@ -9,19 +9,17 @@ class DiscordProfile {
     }
 
     init() {
-        // 1. Kiểm tra token từ URL (do serverless callback redirect về)
         const urlParams = new URLSearchParams(window.location.search);
         const tokenFromUrl = urlParams.get('token');
 
         if (tokenFromUrl) {
             this.token = tokenFromUrl;
             localStorage.setItem('discord_token', this.token);
-            window.history.replaceState({}, document.title, '/'); // xóa ?token=...
+            window.history.replaceState({}, document.title, '/');
             this.loadUserData();
             return;
         }
 
-        // 2. Lấy token từ localStorage (nếu đã đăng nhập trước)
         this.token = localStorage.getItem('discord_token');
         if (this.token) {
             this.loadUserData();
@@ -48,16 +46,12 @@ class DiscordProfile {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
-            if (!res.ok) {
-                this.logout();
-                return;
-            }
+            if (!res.ok) throw new Error('Token invalid');
 
             this.userData = await res.json();
             this.displayProfile();
             this.showProfileContainer();
         } catch (err) {
-            console.error(err);
             this.logout();
         }
     }
@@ -69,12 +63,12 @@ class DiscordProfile {
         const avatarUrl = this.userData.avatar
             ? `https://cdn.discordapp.com/avatars/${this.userData.id}/${this.userData.avatar}.webp?size=256`
             : `https://cdn.discordapp.com/embed/avatars/${(this.userData.discriminator || 0) % 5}.png`;
-
         document.getElementById('avatar').src = avatarUrl;
 
-        // Username + discriminator
-        document.getElementById('username').textContent = this.userData.global_name || this.userData.username || 'User';
+        // Username
+        document.getElementById('username').textContent = this.userData.global_name || this.userData.username;
 
+        // Discriminator
         const discEl = document.getElementById('discriminator');
         if (this.userData.discriminator && this.userData.discriminator !== '0') {
             discEl.textContent = `#${this.userData.discriminator}`;
@@ -83,45 +77,43 @@ class DiscordProfile {
             discEl.style.display = 'none';
         }
 
-        // Bio (mô tả)
+        // Bio
         document.getElementById('bio').textContent = this.userData.bio || 'Chưa có mô tả...';
 
         // User ID
         document.getElementById('user-id').textContent = this.userData.id;
 
-        // Badges
+        // === BADGES – ĐÃ LOẠI BỎ HOÀN TOÀN DẤU << ĐỂ TRÁNH LỖI ===
         const badgesContainer = document.getElementById('badges');
         badgesContainer.innerHTML = '';
 
-        const flags = this.userData.flags || 0;
-        const publicFlags = this.userData.public_flags || 0;
-        const allFlags = flags | publicFlags;
+        const flags = (this.userData.flags || 0) + (this.userData.public_flags || 0);
 
-        const badgeMap = {
-            1<<0:   'Discord Employee',
-            1<<1:   'Partner',
-            1<<2:   'HypeSquad Events',
-            1<<3:   'Bug Hunter Level 1',
-            1<<6:   'House Bravery',
-            1<<7:   'House Brilliance',
-            1<<8:   'House Balance',
-            1<<9:   'Early Supporter',
-            1<<14:  'Bug Hunter Level 2',
-            1<<17:  'Verified Bot Developer',
-            1<<18:  'Active Developer'
-        };
+        const badges = [
+            { bit: 1,      name: 'Discord Employee' },
+            { bit: 2,      name: 'Partner' },
+            { bit: 4,      name: 'HypeSquad Events' },
+            { bit: 8,      name: 'Bug Hunter Lv1' },
+            { bit: 64,     name: 'House Bravery' },
+            { bit: 128,    name: 'House Brilliance' },
+            { bit: 256,    name: 'House Balance' },
+            { bit: 512,    name: 'Early Supporter' },
+            { bit: 16384,  name: 'Bug Hunter Lv2' },
+            { bit: 131072, name: 'Verified Bot Developer' },
+            { bit: 262144, name: 'Active Developer' }
+        ];
 
-        Object.entries(badgeMap).forEach(([bit, name]) => {
-            if (allFlags & Number(bit)) {
-                const badge = document.createElement('span');
-                badge.className = 'badge';
-                badge.textContent = name;
-                badgesContainer.appendChild(badge);
+        badges.forEach(b => {
+            if (flags & b.bit) {
+                const span = document.createElement('span');
+                span.className = 'badge';
+                span.textContent = b.name;
+                badgesContainer.appendChild(span);
             }
         });
 
-        // Nitro
-        if (this.userData.premium_type > 0) {
+        // Nitro badge
+        if (this.userData.premium_type && this.userData.premium_type > 0) {
             const nitro = document.createElement('span');
             nitro.className = 'badge nitro';
             nitro.textContent = 'Nitro';
@@ -146,5 +138,4 @@ class DiscordProfile {
 
 document.addEventListener('DOMContentLoaded', () => {
     new DiscordProfile();
-
 });

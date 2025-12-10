@@ -4,13 +4,13 @@ class DiscordProfile {
         this.redirectUri = 'https://mydiscordprofile.vercel.app';
         this.token = null;
         this.userData = null;
-
         this.init();
     }
 
     init() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tokenFromUrl = urlParams.get('token');
+        // Lấy token từ URL (?token=...)
+        var params = new URLSearchParams(window.location.search);
+        var tokenFromUrl = params.get('token');
 
         if (tokenFromUrl) {
             this.token = tokenFromUrl;
@@ -20,6 +20,7 @@ class DiscordProfile {
             return;
         }
 
+        // Lấy token đã lưu
         this.token = localStorage.getItem('discord_token');
         if (this.token) {
             this.loadUserData();
@@ -29,29 +30,43 @@ class DiscordProfile {
     }
 
     bindEvents() {
-        document.getElementById('login-btn')?.addEventListener('click', () => this.login());
-        document.getElementById('logout-btn')?.addEventListener('click', () => this.logout());
+        var loginBtn = document.getElementById('login-btn');
+        var logoutBtn = document.getElementById('logout-btn');
+
+        if (loginBtn) {
+            loginBtn.addEventListener('click', function() {
+                this.login();
+            }.bind(this));
+        }
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                this.logout();
+            }.bind(this));
+        }
     }
 
     login() {
-        const authUrl = `https://discord.com/oauth2/authorize?client_id=${this.clientId}&redirect_uri=${encodeURIComponent(this.redirectUri)}&response_type=code&scope=identify`;
-        window.location.href = authUrl;
+        var url = 'https://discord.com/oauth2/authorize?client_id=' + this.clientId +
+                  '&redirect_uri=' + encodeURIComponent(this.redirectUri) +
+                  '&response_type=code&scope=identify';
+        window.location.href = url;
     }
 
     async loadUserData() {
         if (!this.token) return;
 
         try {
-            const res = await fetch('https://discord.com/api/v10/users/@me', {
-                headers: { 'Authorization': `Bearer ${this.token}` }
+            var res = await fetch('https://discord.com/api/v10/users/@me', {
+                headers: { 'Authorization': 'Bearer ' + this.token }
             });
 
-            if (!res.ok) throw new Error('Token invalid');
+            if (!res.ok) throw new Error('Invalid token');
 
             this.userData = await res.json();
             this.displayProfile();
-            this.showProfileContainer();
-        } catch (err) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('profile-container').style.display = 'flex';
+        } catch (e) {
             this.logout();
         }
     }
@@ -60,82 +75,73 @@ class DiscordProfile {
         if (!this.userData) return;
 
         // Avatar
-        const avatarUrl = this.userData.avatar
-            ? `https://cdn.discordapp.com/avatars/${this.userData.id}/${this.userData.avatar}.webp?size=256`
-            : `https://cdn.discordapp.com/embed/avatars/${(this.userData.discriminator || 0) % 5}.png`;
-        document.getElementById('avatar').src = avatarUrl;
+        var avatar = this.userData.avatar
+            ? 'https://cdn.discordapp.com/avatars/' + this.userData.id + '/' + this.userData.avatar + '.webp?size=256'
+            : 'https://cdn.discordapp.com/embed/avatars/' + ((this.userData.discriminator || 0) % 5) + '.png';
+        document.getElementById('avatar').src = avatar;
 
-        // Username
+        // Tên
         document.getElementById('username').textContent = this.userData.global_name || this.userData.username;
 
-        // Discriminator
-        const discEl = document.getElementById('discriminator');
+        // Tag
+        var disc = document.getElementById('discriminator');
         if (this.userData.discriminator && this.userData.discriminator !== '0') {
-            discEl.textContent = `#${this.userData.discriminator}`;
-            discEl.style.display = 'inline';
+            disc.textContent = '#' + this.userData.discriminator;
         } else {
-            discEl.style.display = 'none';
+            disc.style.display = 'none';
         }
 
         // Bio
         document.getElementById('bio').textContent = this.userData.bio || 'Chưa có mô tả...';
 
-        // User ID
+        // ID
         document.getElementById('user-id').textContent = this.userData.id;
 
-        // === BADGES – ĐÃ LOẠI BỎ HOÀN TOÀN DẤU << ĐỂ TRÁNH LỖI ===
-        const badgesContainer = document.getElementById('badges');
-        badgesContainer.innerHTML = '';
+        // Badges (không dùng << nữa)
+        var container = document.getElementById('badges');
+        container.innerHTML = '';
+        var flags = (this.userData.flags || 0) | (this.userData.public_flags || 0);
 
-        const flags = (this.userData.flags || 0) + (this.userData.public_flags || 0);
-
-        const badges = [
-            { bit: 1,      name: 'Discord Employee' },
+        var badgeList = [
+            { bit: 1,      name: 'Staff' },
             { bit: 2,      name: 'Partner' },
             { bit: 4,      name: 'HypeSquad Events' },
             { bit: 8,      name: 'Bug Hunter Lv1' },
-            { bit: 64,     name: 'House Bravery' },
-            { bit: 128,    name: 'House Brilliance' },
-            { bit: 256,    name: 'House Balance' },
+            { bit: 64,     name: 'Bravery' },
+            { bit: 128,    name: 'Brilliance' },
+            { bit: 256,    name: 'Balance' },
             { bit: 512,    name: 'Early Supporter' },
             { bit: 16384,  name: 'Bug Hunter Lv2' },
-            { bit: 131072, name: 'Verified Bot Developer' },
-            { bit: 262144, name: 'Active Developer' }
+            { bit: 131072, name: 'Verified Dev' },
+            { bit: 262144, name: 'Active Dev' }
         ];
 
-        badges.forEach(b => {
+        badgeList.forEach(function(b) {
             if (flags & b.bit) {
-                const span = document.createElement('span');
+                var span = document.createElement('span');
                 span.className = 'badge';
                 span.textContent = b.name;
-                badgesContainer.appendChild(span);
+                container.appendChild(span);
             }
         });
 
-        // Nitro badge
         if (this.userData.premium_type && this.userData.premium_type > 0) {
-            const nitro = document.createElement('span');
+            var nitro = document.createElement('span');
             nitro.className = 'badge nitro';
             nitro.textContent = 'Nitro';
-            badgesContainer.appendChild(nitro);
+            container.appendChild(nitro);
         }
-    }
-
-    showProfileContainer() {
-        document.getElementById('login-container').style.display = 'none';
-        document.getElementById('profile-container').style.display = 'flex';
     }
 
     logout() {
         localStorage.removeItem('discord_token');
-        this.token = null;
-        this.userData = null;
         document.getElementById('profile-container').style.display = 'none';
         document.getElementById('login-container').style.display = 'flex';
         window.location.href = '/';
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Khởi động
+document.addEventListener('DOMContentLoaded', function() {
     new DiscordProfile();
 });

@@ -1,38 +1,40 @@
-// api/callback.js
 const CLIENT_ID = "1416381905024323755";
-const CLIENT_SECRET = "YrEyjK1CYHELbQaejSlZEg5vRLS5HP8G"; // ← CHỈ THAY DÒNG NÀY!!!
-const REDIRECT_URI = "https://mydiscordprofile.vercel.app";
+const CLIENT_SECRET = process.env.CLIENT_SECRET || "YrEyjK1CYHELbQaejSlZEg5vRLS5HP8G"; // Dùng env var Vercel cho an toàn!
 
 export default async function handler(req, res) {
-  const code = req.query.code || req.url.split('code=')[1]?.split('&')[0];
+  // Parse code từ URL query (Vercel serverless)
+  var url = new URL(req.url, `http://${req.headers.host}`);
+  var code = url.searchParams.get('code');
 
   if (!code) {
-    return res.status(400).send("Không có code");
+    return res.status(400).send("<h1>Lỗi: Không có code từ Discord</h1><p>Kiểm tra redirect URI trong Discord Dev Portal.</p>");
   }
 
   try {
-    const response = await fetch("https://discord.com/api/oauth2/token", {
+    var response = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
       body: new URLSearchParams({
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
         grant_type: "authorization_code",
         code: code,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: "https://mydiscordprofile.vercel.app",
       }),
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
-    const data = await response.json();
+    var data = await response.json();
 
     if (data.error) {
-      return res.status(400).send("Lỗi Discord: " + data.error_description);
+      return res.status(400).send("<h1>Lỗi Discord: " + (data.error_description || data.error) + "</h1>");
     }
 
-    // Đổi code thành token rồi redirect về trang chủ kèm token
-    res.redirect(`/?token=${data.access_token}`);
-  } catch (error) {
-    res.status(500).send("Lỗi server: " + error.message);
+    // Redirect về trang chủ với token
+    res.redirect("https://mydiscordprofile.vercel.app/?token=" + data.access_token);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("<h1>Lỗi server: " + e.message + "</h1>");
   }
 }
+
 export const config = { api: { bodyParser: false } };

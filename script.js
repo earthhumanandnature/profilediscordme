@@ -98,17 +98,17 @@ class DiscordProfile {
         const allFlags = flags | publicFlags;
 
         const badgeMap = {
-            1 << 0:  'Staff',
-            1 << 1:  'Partner',
-            1 << 2:  'HypeSquad Events',
-            1 << 3:  'Bug Hunter Level 1',
-            1 << 9:  'Early Supporter',
-            1 << 14: 'Bug Hunter Level 2',
-            1 << 17: 'Verified Bot Developer',
-            1 << 18: 'Active Developer',
-            1 << 6:  'Bravery',
-            1 << 7:  'Brilliance',
-            1 << 8:  'Balance',
+            1<<0:   'Discord Employee',
+            1<<1:   'Partner',
+            1<<2:   'HypeSquad Events',
+            1<<3:   'Bug Hunter Level 1',
+            1<<6:   'House Bravery',
+            1<<7:   'House Brilliance',
+            1<<8:   'House Balance',
+            1<<9:   'Early Supporter',
+            1<<14:  'Bug Hunter Level 2',
+            1<<17:  'Verified Bot Developer',
+            1<<18:  'Active Developer'
         };
 
         Object.entries(badgeMap).forEach(([bit, name]) => {
@@ -146,4 +146,5 @@ class DiscordProfile {
 
 document.addEventListener('DOMContentLoaded', () => {
     new DiscordProfile();
+
 });

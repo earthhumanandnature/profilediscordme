@@ -1,143 +1,129 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*{margin:0;padding:0;box-sizing:border-box;}
 
-body {
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #1e3c72, #2a5298, #00b09b, #96c93d);
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  overflow: hidden;
+body{
+  font-family:'Poppins',sans-serif;
+  background:linear-gradient(135deg,#1e3c72,#2a5298,#00b09b,#96c93d);
+  background-size:400% 400%;
+  animation:gradient 15s ease infinite;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+}
+@keyframes gradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+.container{
+  perspective:2000px;
+  width:100%;
+  padding:20px;
+  text-align:center;
 }
 
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* CARD KHI ĐÃ LOGIN */
+.card{
+  position:relative;
+  max-width:420px;
+  margin:0 auto;
+  background:rgba(0,0,0,0.45);
+  border-radius:24px;
+  overflow:hidden;
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.1);
+  box-shadow:0 10px 40px rgba(0,0,0,0.6);
+  transition:all .5s ease;
+  transform-style:preserve-3d;
+}
+.card.tilt{transition:transform .1s ease-out;}
+.card:hover{
+  transform:translateY(-12px) scale(1.04);
+  box-shadow:0 30px 70px rgba(0,0,0,0.8),0 0 50px rgba(88,101,242,0.5);
 }
 
-.container {
-  perspective: 2000px;
-  padding: 20px;
-  width: 100%;
+.banner{height:130px;background:#5865F2;background-size:cover;background-position:center;}
+.avatar-container{position:relative;display:inline-block;margin:-80px auto 20px;}
+.avatar{width:140px;height:140px;border-radius:50%;border:8px solid #0f0f23;box-shadow:0 8px 30px rgba(0,0,0,0.9);transition:border-radius .3s;}
+.avatar:hover{border-radius:38%;}
+
+.status-ring{
+  position:absolute;bottom:4px;right:4px;
+  width:46px;height:46px;background:#232428;
+  border:6px solid #0f0f23;border-radius:50%;
+}
+.status-dot{
+  position:absolute;top:50%;left:50%;width:28px;height:28px;
+  background:#747f8d;border-radius:50%;transform:translate(-50%,-50%);
+}
+.status-ring.online .status-dot{background:#3ba55c}
+.status-ring.idle   .status-dot{background:#faa61a}
+.status-ring.dnd    .status-dot{background:#ed4245}
+.status-ring.offline .status-dot{background:#747f8d}
+
+.music-toggle{
+  position:absolute;bottom:20px;right:20px;
+  width:60px;height:60px;background:rgba(88,101,242,0.95);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:4px solid rgba(255,255,255,0.2);backdrop-filter:blur(10px);
+  transition:.4s;z-index:10;
+}
+.music-toggle:hover{transform:scale(1.2);background:#7289da;}
+.music-toggle.playing{animation:pulse 2s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(114,137,218,0.8)}70%{box-shadow:0 0 0 20px rgba(114,137,218,0)}100%{box-shadow:0 0 0 0 rgba(114,137,218,0)}}
+
+.info{padding:0 20px 20px;text-align:center;}
+#username{font-size:28px;font-weight:700;margin-bottom:6px;}
+#username span{color:#b9bbbe;font-weight:400;}
+.bio{color:#dcddde;font-size:15px;line-height:1.6;margin:15px 0;min-height:24px;}
+.badges{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:15px 0;}
+.badge{width:38px;height:38px;border-radius:50%;}
+
+.invite-btn{
+  margin:20px;padding:16px;background:#5865F2;color:white;
+  border-radius:12px;text-decoration:none;font-weight:600;transition:.3s;
+}
+.invite-btn:hover{background:#4752c4;transform:scale(1.03);}
+
+/* TRẠNG THÁI CHƯA ĐĂNG NHẬP - GỌN ĐẸP */
+.welcome{
+  max-width:380px;
+  padding:40px 30px;
+  background:rgba(0,0,0,0.4);
+  border-radius:24px;
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.1);
+  box-shadow:0 10px 40px rgba(0,0,0,0.5);
+}
+.welcome-img{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  margin-bottom:20px;
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-15px)}
+}
+.welcome h2{font-size:26px;margin:10px 0;}
+.welcome p{font-size:15px;color:#b9bbbe;margin-bottom:25px;}
+.login-btn{
+  display:inline-block;
+  padding:14px 32px;
+  background:#5865F2;
+  color:white;
+  border-radius:50px;
+  text-decoration:none;
+  font-weight:600;
+  font-size:16px;
+  transition:.3s;
+  box-shadow:0 6px 20px rgba(88,101,242,0.4);
+}
+.login-btn:hover{
+  background:#4752c4;
+  transform:translateY(-3px);
+  box-shadow:0 10px 30px rgba(88,101,242,0.6);
 }
 
-.card {
-  position: relative;
-  max-width: 420px;
-  width: 100%;
-  margin: 0 auto;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 24px;
-  overflow: hidden;
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-  transform-style: preserve-3d;
-}
-
-/* Hiệu ứng nghiêng + phồng khi hover */
-.card:hover {
-  transform: translateY(-10px) scale(1.04);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(88,101,242,0.5);
-}
-
-.banner {
-  height: 130px;
-  background: #5865F2;
-  background-size: cover;
-  background-position: center;
-}
-
-/* Avatar + nút xanh giống Discord thật */
-.avatar-container {
-  position: relative;
-  display: inline-block;
-  margin: -80px auto 20px;
-}
-
-.avatar {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  border: 8px solid #0f0f23;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-  transition: border-radius 0.3s;
-}
-
-.avatar:hover {
-  border-radius: 38%;
-}
-
-/* Nút trạng thái xanh giống hệt Discord */
-.status-ring {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 46px;
-  height: 46px;
-  background: #232428;
-  border: 6px solid #0f0f23;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.status-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 28px;
-  height: 28px;
-  background: #747f8d;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.status-ring.online .status-dot   { background: #3ba55c; }
-.status-ring.idle .status-dot     { background: #faa61a; }
-.status-ring.dnd .status-dot      { background: #ed4245; }
-.status-ring.offline .status-dot  { background: #747f8d; }
-
-/* Nút nhạc */
-.music-toggle {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  background: rgba(88, 101, 242, 0.95);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 4px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
-  transition: all 0.4s ease;
-  z-index: 10;
-}
-
-.music-toggle:hover {
-  transform: scale(1.2);
-  background: #7289da;
-}
-
-.music-toggle.playing {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(114,137,218,0.8); }
-  70% { box-shadow: 0 0 0 20px rgba(114,137,218,0); }
-  100% { box-shadow: 0 0 0 0 rgba(114,137,218,0); }
-}
-
-.info { padding: 0 20px 20px; text-align: center; }
-#username { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
-#username span { color: #b9bb
+.hidden{display:none !important;}

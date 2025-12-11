@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Discord Profile</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"/>
   <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico"/>
 </head>
 <body>
   <div class="container">
+
     <!-- Profile Card -->
     <div id="profile-card" class="card hidden">
       <div class="banner" id="banner"></div>
@@ -26,25 +27,25 @@
         <div class="badges" id="badges"></div>
       </div>
 
-      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
-         class="invite-btn" target="_blank">
-        Thêm bot để xem profile
+      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify%20bot%20guilds.join&guild_id=1435083149142130720&disable_guild_select=true&permissions=0" 
+         class="invite-btn" target="_blank>
+        Mời bạn khác xem profile
       </a>
     </div>
 
     <!-- Loading -->
     <div id="loading" class="center">
-      <img src="loading.png" alt="Loading" class="loading-img"/>
-      <p>Đang tải profile đẹp của bạn...</p>
+      <img src="/loading.png" alt="Loading" class="loading-img"/>
+      <p>Đang tải profile đẹp trai/xinh gái của bạn...</p>
     </div>
 
     <!-- Error -->
     <div id="error" class="center hidden">
-      <h2>Chưa đăng nhập Discord</h2>
-      <p>Hãy thêm bot để xem profile nha!</p>
-      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
-         class="invite-btn">Đăng nhập ngay</a>
+      <h2>Chưa đăng nhập</h2>
+      <p>Click nút dưới để xem profile nha</p>
+      <a href="/api/profile" class="invite-btn">Bắt đầu ngay</a>
     </div>
+
   </div>
 
   <script src="script.js"></script>

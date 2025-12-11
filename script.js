@@ -4,9 +4,10 @@ const code = urlParams.get('code');
 const card = document.getElementById('profile-card');
 const musicToggle = document.getElementById('musicToggle');
 const audio = document.getElementById('bgMusic');
+const statusRing = document.getElementById('status');
 let isPlaying = false;
 
-// ==================== DISCORD OAUTH & LẤY PROFILE ====================
+// ==================== DISCORD OAUTH ====================
 if (!code) {
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('error').classList.remove('hidden');
@@ -25,7 +26,7 @@ if (!code) {
   })
   .then(res => res.json())
   .then(tokenData => {
-    if (!tokenData.access_token) throw new Error('No access token');
+    if (!tokenData.access_token) throw new Error('No token');
     return fetch('https://discord.com/api/v10/users/@me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
@@ -42,30 +43,32 @@ if (!code) {
     document.getElementById('avatar').src = avatarUrl;
 
     // Username
-    const displayName = user.global_name || user.username;
-    document.getElementById('username').innerHTML = 
-      `${displayName} <span>#${user.discriminator || '0000'}</span>`;
+    const name = user.global_name || user.username;
+    document.getElementById('username').innerHTML = `${name} <span>#${user.discriminator || '0000'}</span>`;
 
     // Banner
     if (user.banner) {
       const format = user.banner.startsWith('a_') ? 'gif' : 'webp';
-      const bannerUrl = `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${format}?size=480`;
-      document.getElementById('banner').style.backgroundImage = `url('${bannerUrl}')`;
+      document.getElementById('banner').style.backgroundImage = 
+        `url('https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${format}?size=480')`;
     }
 
-    // Trạng thái giả lập (xanh lá, vàng, đỏ, xám)
+    // Trạng thái giả lập (vì scope identify không có presence thật)
     const statuses = ['online', 'idle', 'dnd', 'offline'];
     const status = statuses[Math.floor(Math.random() * 4)];
-    document.getElementById('status').classList.add(status);
+    statusRing.className = `status-ring ${status}`; // thêm class online/idle/dnd/offline
 
-    // Badge Nitro
+    // Nitro badge
     if (user.premium_type && user.premium_type > 0) {
       const img = document.createElement('img');
       img.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
       img.className = 'badge';
-      img.title = 'Discord Nitro';
+      img.title = 'Nitro';
       document.getElementById('badges').appendChild(img);
     }
+
+    // BẬT HIỆU ỨNG NGHIÊNG NGAY KHI CARD HIỆN
+    enableTiltEffect();
   })
   .catch(err => {
     console.error(err);
@@ -85,34 +88,34 @@ musicToggle.addEventListener('click', () => {
   }
   isPlaying = !isPlaying;
 });
-
-// Cho phép phát nhạc sau lần click đầu tiên
 document.body.addEventListener('click', () => audio.play().catch(() => {}), { once: true });
 
-// ==================== HIỆU ỨNG NGHIÊNG + PHỒNG CARD ====================
-const applyTilt = (e) => {
-  if (window.innerWidth < 768 || card.classList.contains('hidden')) return;
+// ==================== HIỆU ỨNG NGHIÊNG CARD SIÊU MƯỢT ====================
+function enableTiltEffect() {
+  const handleMove = (e) => {
+    if (window.innerWidth < 768) return;
 
-  const rect = card.getBoundingClientRect();
-  const x = e.clientX - (rect.left + rect.width / 2);
-  const y = e.clientY - (rect.top + rect.height / 2);
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
 
-  const rotateY = x / 18;
-  const rotateX = -y / 18;
+    const rotateY = x * 0.07;   // nghiêng mạnh hơn
+    const rotateX = -y * 0.07;
 
-  card.style.transform = `perspective(1500px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.04)`;
-};
+    card.style.transform = `
+      perspective(1500px)
+      rotateX(${rotateX}deg)
+      rotateY(${rotateY}deg)
+      scale(1.05)
+    `;
+  };
 
-const resetTilt = () => {
-  card.style.transform = 'perspective(1500px) rotateX(0) rotateY(0) scale(1)';
-};
+  const handleLeave = () => {
+    card.style.transform = 'perspective(1500px) rotateX(0) rotateY(0) scale(1)';
+  };
 
-document.addEventListener('mousemove', applyTilt);
-card.addEventListener('mouseout', resetTilt); // khi chuột ra hẳn khỏi cửa sổ
-card.addEventListener('mouseleave', resetTilt);
-
-// Nếu trang được reload khi đã login rồi thì vẫn có hiệu ứng ngay
-if (!card.classList.contains('hidden')) {
-  document.addEventListener('mousemove', applyTilt);
-  card.addEventListener('mouseleave', resetTilt);
+  document.addEventListener('mousemove', handleMove);
+  card.addEventListener('mouseleave', handleLeave);
 }
+// Nếu reload trang khi đã login rồi → vẫn có hiệu ứng nghiêng
+if (!card.classList.contains('hidden')) enableTiltEffect();

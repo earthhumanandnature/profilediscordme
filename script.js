@@ -8,12 +8,12 @@ const audio       = document.getElementById('bgMusic');
 const statusRing  = document.getElementById('status');
 let isPlaying = false;
 
-// ==================== CHƯA ĐĂNG NHẬP ====================
+// ============== CHƯA LOGIN ==============
 if (!code) {
   card.classList.add('hidden');
   welcome.classList.remove('hidden');
-} 
-// ==================== ĐÃ ĐĂNG NHẬP ====================
+}
+// ============== ĐÃ LOGIN ==============
 else {
   welcome.classList.add('hidden');
 
@@ -32,7 +32,9 @@ else {
   .then(r => r.json())
   .then(t => {
     if (!t.access_token) throw '';
-    return fetch('https://discord.com/api/v10/users/@me', { headers: { Authorization: `Bearer ${t.access_token}` } });
+    return fetch('https://discord.com/api/v10/users/@me', {
+      headers: { Authorization: `Bearer ${t.access_token}` }
+    });
   })
   .then(r => r.json())
   .then(user => {
@@ -40,10 +42,9 @@ else {
     card.classList.remove('hidden');
 
     // Avatar
-    const av = user.avatar
+    document.getElementById('avatar').src = user.avatar
       ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=256`
       : `https://cdn.discordapp.com/embed/avatars/${(user.discriminator || 0) % 5}.png`;
-    document.getElementById('avatar').src = av;
 
     // Tên
     const name = user.global_name || user.username;
@@ -53,14 +54,14 @@ else {
     if (user.banner) {
       const fmt = user.banner.startsWith('a_') ? 'gif' : 'webp';
       document.getElementById('banner').style.backgroundImage = 
-        `url('https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${fmt}?size=480')`;
+        `ur[](https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${fmt}?size=480)`;
     }
 
-    // Trạng thái giả lập
+    // Trạng thái
     const s = ['online','idle','dnd','offline'][Math.floor(Math.random()*4)];
     statusRing.className = `status-ring ${s}`;
 
-    // Nitro badge
+    // Nitro
     if (user.premium_type > 0) {
       const i = document.createElement('img');
       i.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
@@ -69,8 +70,10 @@ else {
       document.getElementById('badges').appendChild(i);
     }
 
-    // BẬT HIỆU ỨNG NGHIÊNG SIÊU ĐẸP NHƯ CODE CŨ
-    enableOldTilt();
+    // BẬT NGHIÊNG SIÊU MƯỢT (chính xác cái bạn thích)
+    document.addEventListener('mousemove', handleMouseMove);
+    document.querySelector('.container').addEventListener('mouseleave', handleMouseLeave);
+
   })
   .catch(() => {
     welcome.classList.remove('hidden');
@@ -78,7 +81,7 @@ else {
   });
 }
 
-// ==================== NÚT NHẠC ====================
+// ============== NÚT NHẠC ==============
 musicToggle.onclick = () => {
   if (isPlaying) audio.pause();
   else audio.play();
@@ -87,25 +90,23 @@ musicToggle.onclick = () => {
 };
 document.body.addEventListener('click', () => audio.play(), { once: true });
 
-// ==================== HIỆU ỨNG NGHIÊNG CŨ (SIÊU MƯỢT, SIÊU ĐẸP) ====================
-function enableOldTilt() {
-  const move = (e) => {
-    if (window.innerWidth < 768) return;
+// ============== HIỆU ỨNG NGHIÊNG CỰC CHUẨN (copy nguyên bản cũ bạn thích) ==============
+function handleMouseMove(e) {
+  if (window.innerWidth < 768) return;
+  if (card.classList.contains('hidden')) return;
 
-    const rect = card.getBoundingClientRect();
-    const xAxis = (window.innerWidth / 2 - e.clientX) / 25;
-    const yAxis = (window.innerHeight / 2 - e.clientY) / 25;
+  const xAxis = (window.innerWidth / 2 - e.clientX) / 30;
+  const yAxis = (window.innerHeight / 2 - e.clientY) / 30;
 
-    card.style.transform = `perspective(1000px) rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-  };
-
-  const leave = () => {
-    card.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg)';
-  };
-
-  document.addEventListener('mousemove', move);
-  document.querySelector('.container').addEventListener('mouseleave', leave);
+  card.style.transform = `perspective(1200px) rotateX(${yAxis}deg) rotateY(${xAxis}deg) scale3d(1.03,1.03,1.03)`;
 }
 
-// Nếu reload trang khi đã login → vẫn bật nghiêng ngay
-if (!card.classList.contains('hidden')) enableOldTilt();
+function handleMouseLeave() {
+  card.style.transform = 'perspective(1200px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+}
+
+// Nếu reload trang khi đã login → vẫn nghiêng ngay
+if (!card.classList.contains('hidden')) {
+  document.addEventListener('mousemove', handleMouseMove);
+  document.querySelector('.container').addEventListener('mouseleave', handleMouseLeave);
+}

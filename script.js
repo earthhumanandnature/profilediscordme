@@ -85,5 +85,46 @@ if (!code) {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('error').classList.remove('hidden');
   });
+
+  const card = document.getElementById('profile-card');
+  const musicToggle = document.getElementById('musicToggle');
+  const audio = document.getElementById('bgMusic');
+  let isPlaying = false;
+
+  // Nút nhạc
+  musicToggle.addEventListener('click', () => {
+    if (isPlaying) {
+      audio.pause();
+      musicToggle.classList.remove('playing');
+    } else {
+      audio.play().catch(e => alert("Không thể phát nhạc (có thể do chính sách autoplay)"));
+      musicToggle.classList.add('playing');
+    }
+    isPlaying = !isPlaying;
+  });
+
+  // Hiệu ứng nghiêng card theo chuột
+  document.addEventListener('mousemove', (e) => {
+    if (window.innerWidth < 768) return; // tắt trên mobile
+
+    const xAxis = (window.innerWidth / 2 - e.clientX) / 25;
+    const yAxis = (window.innerHeight / 2 - e.clientY) / 25;
+
+    card.style.transform = `perspective(1000px) rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+  });
+
+  // Khi chuột rời khỏi vùng container → trở về vị trí gốc mượt
+  document.querySelector('.container').addEventListener('mouseleave', () => {
+    card.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg)';
+  });
+
+  // Tự động phát nhạc khi người dùng tương tác lần đầu (tránh lỗi autoplay)
+  document.body.addEventListener('click', () => {
+    if (!isPlaying) {
+      audio.play().catch(() => {});
+    }
+  }, { once: true });
+  
 }
+
 

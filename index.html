@@ -1,49 +1,49 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Profile</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Discord Profile</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico"/>
 </head>
 <body>
-    <!-- Login Button -->
-    <div id="login-container" class="login-container">
-        <button id="login-btn" class="login-btn">
-            <span>🔗 Đăng nhập với Discord</span>
-        </button>
+  <div class="container">
+    <div id="profile-card" class="card hidden">
+      <div class="banner" id="banner"></div>
+      <div class="avatar-container">
+        <img id="avatar" class="avatar" alt="Avatar"/>
+        <div id="status" class="status"></div>
+      </div>
+
+      <div class="info">
+        <h1 id="username"></h1>
+        <p id="bio" class="bio"></p>
+
+        <div class="badges" id="badges"></div>
+      </div>
+
+      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
+         class="invite-btn" target="_blank">
+        ↗ Thêm bot để xem profile của bạn
+      </a>
     </div>
 
-    <!-- Profile Container -->
-    <div id="profile-container" class="profile-container" style="display: none;">
-        <div class="profile-card">
-            <div class="avatar-section">
-                <img id="avatar" class="avatar" src="" alt="Avatar">
-                <div class="status-indicator" id="status-indicator">
-                    <div class="status-dot" id="status-dot"></div>
-                </div>
-            </div>
-            
-            <div class="profile-info">
-                <h1 id="username">Loading...</h1>
-                <p id="discriminator" class="discriminator">#0000</p>
-                <p id="bio" class="bio">Chưa có mô tả...</p>
-                
-                <div class="user-id">
-                    <span>ID:</span> <code id="user-id">Loading...</code>
-                </div>
-                
-                <div class="badges" id="badges">
-                    <!-- Badges will be populated here -->
-                </div>
-            </div>
-        </div>
-        
-        <div class="logout-btn">
-            <button id="logout-btn">Đăng xuất</button>
-        </div>
+    <div id="loading" class="loading">
+      <img src="https://discord.com/assets/5d92ff9153b9e4f8e259.png" alt="Loading"/>
+      <p>Đang tải profile...</p>
     </div>
 
-    <script src="script.js"></script>
+    <div id="error" class="error hidden">
+      <h2>Không thể tải profile</h2>
+      <p>Bạn chưa đăng nhập Discord hoặc chưa thêm bot.</p>
+      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
+         class="invite-btn">
+        → Đăng nhập với Discord
+      </a>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

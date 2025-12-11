@@ -1,16 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #1e3c72, #2a5298, #00b09b, #96c93d);
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364, #00b09b, #96c93d);
+  background-size: 500% 500%;
+  animation: gradient 20s ease infinite;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -24,28 +20,19 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-.container {
-  width: 100%;
-  max-width: 420px;
-  padding: 20px;
-}
+.container { width: 100%; max-width: 440px; padding: 20px; }
 
 .card {
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 24px;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: transform 0.3s;
-}
-
-.card:hover {
-  transform: translateY(-10px);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
 .banner {
-  height: 120px;
+  height: 130px;
   background: #5865F2;
   background-size: cover;
   background-position: center;
@@ -53,114 +40,121 @@ body {
 
 .avatar-container {
   position: relative;
-  margin: -60px;
   text-align: center;
+  margin-top: -80px;
 }
 
 .avatar {
-  width: 140px;
-  height: 140px;
+  {
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  border: 8px solid #0f0f23;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  border: 8px solid #11121a;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.8);
 }
 
-.status {
+.status-ring {
+  {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  background: #232428;
+  bottom: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  background: #11121a;
   border-radius: 50%;
-  border: 5px solid #0f0f23;
+  border: 6px solid #11121a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.status::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 18px;
-  height: 18px;
+.status-dot {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
+  background: #747f8d;
 }
 
-.status.online::after   { background: #3ba55c; }
-.status.idle::after     { background: #faa61a; }
-.status.dnd::after      { background: #ed4245; }
-.status.offline::after  { background: #747f8d; }
+.status-ring.online .status-dot   { background: #3ba55c; animation: pulse 2s infinite; }
+.status-ring.idle .status-dot      { background: #faa61a; }
+.status-ring.dnd .status-dot       { background: #ed4245; }
+.status-ring.offline .status-dot   { background: #747f8d; }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 165, 92, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(59, 165, 92, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 165, 92, 0); }
+}
 
 .info {
-  padding: 20px;
+  padding: 20px 30px 30px;
   text-align: center;
 }
 
 #username {
-  font-size: 26px;
-  margin-bottom: 10px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 #username span {
-  color: #b9bbbe;
   font-weight: 400;
+  color: #b9bbbe;
 }
 
 .bio {
   color: #dcddde;
-  font-size: 15px;
-  line-height: 1.5;
-  margin: 15px 0;
-  min-height: 20px;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 16px 0;
+  min-height: 48px;
+  padding: 0 10px;
 }
 
 .badges {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 15px 0;
+  gap: 10px;
+  margin: 20px 0;
 }
 
 .badge {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  object-fit: contain;
 }
 
 .invite-btn {
   display: block;
-  text-align: center;
+  margin: 0 30px 20px;
+  padding: 14px;
   background: #5865F2;
   color: white;
-  padding: 14px;
+  text-align: center;
   border-radius: 12px;
   text-decoration: none;
   font-weight: 600;
-  margin: 20px;
   transition: 0.3s;
 }
 
 .invite-btn:hover {
   background: #4752c4;
-  transform: scale(1.03);
+  transform: translateY(-2px);
 }
 
-.loading, .error {
+.center {
   text-align: center;
-  padding: 40px;
-  color: white;
+  padding: 60px 20px;
 }
 
-.loading img {
-  width: 80px;
-  animation: spin 2s linear infinite;
+.loading-img {
+  width: 90px;
+  animation: spin 1.5s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 

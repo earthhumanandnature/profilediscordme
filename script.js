@@ -8,12 +8,12 @@ const audio       = document.getElementById('bgMusic');
 const statusRing  = document.getElementById('status');
 let isPlaying = false;
 
-// ============== CHƯA LOGIN ==============
+// ==================== CHƯA LOGIN ====================
 if (!code) {
   card.classList.add('hidden');
   welcome.classList.remove('hidden');
-}
-// ============== ĐÃ LOGIN ==============
+} 
+// ==================== ĐÃ LOGIN ====================
 else {
   welcome.classList.add('hidden');
 
@@ -54,14 +54,14 @@ else {
     if (user.banner) {
       const fmt = user.banner.startsWith('a_') ? 'gif' : 'webp';
       document.getElementById('banner').style.backgroundImage = 
-        `ur[](https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${fmt}?size=480)`;
+        `url('https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${fmt}?size=480')`;
     }
 
-    // Trạng thái
+    // Trạng thái giả lập
     const s = ['online','idle','dnd','offline'][Math.floor(Math.random()*4)];
     statusRing.className = `status-ring ${s}`;
 
-    // Nitro
+    // Nitro badge
     if (user.premium_type > 0) {
       const i = document.createElement('img');
       i.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
@@ -70,9 +70,10 @@ else {
       document.getElementById('badges').appendChild(i);
     }
 
-    // BẬT NGHIÊNG SIÊU MƯỢT (chính xác cái bạn thích)
-    document.addEventListener('mousemove', handleMouseMove);
-    document.querySelector('.container').addEventListener('mouseleave', handleMouseLeave);
+    // BẮT ĐẦU NGHIÊNG NGAY VÀ LUÔN – CÁI NÀY CHẮC CHẮN CHẠY
+    card.style.transition = 'transform 0.1s ease-out';
+    document.addEventListener('mousemove', tiltCard);
+    document.addEventListener('mouseleave', resetCard);
 
   })
   .catch(() => {
@@ -81,32 +82,34 @@ else {
   });
 }
 
-// ============== NÚT NHẠC ==============
+// ==================== NÚT NHẠC ====================
 musicToggle.onclick = () => {
   if (isPlaying) audio.pause();
   else audio.play();
   isPlaying = !isPlaying;
   musicToggle.classList.toggle('playing', isPlaying);
 };
-document.body.addEventListener('click', () => audio.play(), { once: true });
+document.body.onclick = () => audio.play(); // bật nhạc ngay lần click đầu
 
-// ============== HIỆU ỨNG NGHIÊNG CỰC CHUẨN (copy nguyên bản cũ bạn thích) ==============
-function handleMouseMove(e) {
-  if (window.innerWidth < 768) return;
+// ==================== NGHIÊNG SIÊU MẠNH – CHẠY NGAY KHÔNG CẦN CHỜ ====================
+function tiltCard(e) {
   if (card.classList.contains('hidden')) return;
+  if (window.innerWidth < 768) return;
 
-  const xAxis = (window.innerWidth / 2 - e.clientX) / 30;
-  const yAxis = (window.innerHeight / 2 - e.clientY) / 30;
+  const xAxis = (window.innerWidth / 2 - e.clientX) / 22;
+  const yAxis = (window.innerHeight / 2 - e.clientY) / 22;
 
-  card.style.transform = `perspective(1200px) rotateX(${yAxis}deg) rotateY(${xAxis}deg) scale3d(1.03,1.03,1.03)`;
+  card.style.transform = `perspective(1400px) rotateX(${yAxis}deg) rotateY(${xAxis}deg) scale3d(1.05,1.05,1.05)`;
 }
 
-function handleMouseLeave() {
-  card.style.transform = 'perspective(1200px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+function resetCard() {
+  if (card.classList.contains('hidden')) return;
+  card.style.transform = 'perspective(1400px) rotateX(0) rotateY(0) scale3d(1,1,1)';
 }
 
-// Nếu reload trang khi đã login → vẫn nghiêng ngay
+// Nếu reload trang khi đã login → vẫn nghiêng ngay lập tức
 if (!card.classList.contains('hidden')) {
-  document.addEventListener('mousemove', handleMouseMove);
-  document.querySelector('.container').addEventListener('mouseleave', handleMouseLeave);
+  card.style.transition = 'transform 0.1s ease-out';
+  document.addEventListener('mousemove', tiltCard);
+  document.addEventListener('mouseleave', resetCard);
 }

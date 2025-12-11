@@ -10,7 +10,7 @@ if (!code) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: '1416381905024323755',
-      client_secret: 'THAY_CLIENT_SECRET_CUA_BAN_VAO_DAY', // ← RẤT QUAN TRỌNG
+      client_secret: '8nAeNgEpThAgzJ0HgU2XGI05b9F-CoYG', // ← RẤT QUAN TRỌNG
       grant_type: 'authorization_code',
       code: code,
       redirect_uri: 'https://mydiscordprofile.vercel.app',
@@ -86,3 +86,4 @@ if (!code) {
     document.getElementById('error').classList.remove('hidden');
   });
 }
+

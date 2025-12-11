@@ -1,121 +1,88 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get('code');
 
-* { margin:0; padding:0; box-sizing:border-box; }
+if (!code) {
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('error').classList.remove('hidden');
+} else {
+  fetch(`https://discord.com/api/v10/oauth2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: '1416381905024323755',
+      client_secret: 'THAY_CLIENT_SECRET_CUA_BAN_VAO_DAY', // ← RẤT QUAN TRỌNG
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: 'https://mydiscordprofile.vercel.app',
+      scope: 'identify',
+    })
+  })
+  .then(res => res.json())
+  .then(tokenData => {
+    if (tokenData.access_token) {
+      return fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+    }
+    throw new Error('No access token');
+  })
+  .then(res => res.json())
+  .then(user => {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('profile-card').classList.remove('hidden');
 
-body {
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364, #00b09b, #96c93d);
-  background-size: 500% 500%;
-  animation: gradient 20s ease infinite;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+    // Avatar
+    const avatarUrl = user.avatar 
+      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=256`
+      : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
+    document.getElementById('avatar').src = avatarUrl;
+
+    // Username
+    const globalName = user.global_name || user.username;
+    document.getElementById('username').innerHTML = 
+      `${globalName} <span>#${user.discriminator}</span>`;
+
+    // Banner
+    if (user.banner) {
+      const bannerUrl = user.banner.startsWith('a_')
+        ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.gif?size=480`
+        : `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.webp?size=480`;
+      document.getElementById('banner').style.backgroundImage = `url('${bannerUrl}')`;
+    }
+
+    // Bio (About Me) - cần scope guilds + thêm endpoint /users/@me/profile nhưng hiện tại chỉ identify thì không có
+    // Nếu bạn thêm scope `guilds` và xử lý backend thì có thể lấy được
+
+    // Trạng thái (cần bot online và dùng gateway hoặc thêm endpoint backend)
+    // Ở đây mình giả lập một chút để đẹp, bạn có thể bỏ nếu không muốn
+    const statuses = ['online', 'idle','dnd','offline'];
+    const status = statuses[Math.floor(Math.random()*4)];
+    document.getElementById('status').classList.add(status);
+
+    // Badges đơn giản (chỉ vài badge công khai từ user.flags)
+    const badgesDiv = document.getElementById('badges');
+    const flags = user.flags || 0;
+    const premium = user.premium_type || 0;
+
+    if (premium > 0) {
+      const img = document.createElement('img');
+      img.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
+      img.className = 'badge';
+      img.title = 'Nitro';
+      badgesDiv.appendChild(img);
+    }
+
+    if (flags & (1 << 2)) { // Staff
+      const img = document.createElement('img');
+      img.src = 'https://discord.com/assets/4e2f3b5a7b3d7d3e2b9d6d106d7e7e7e.svg';
+      img.className = 'badge';
+      badgesDiv.appendChild(img);
+    }
+    // thêm các badge khác nếu muốn...
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('error').classList.remove('hidden');
+  });
 }
-
-@keyframes gradient {
-  0% {background-position:0% 50%}
-  50% {background-position:100% 50%}
-  100% {background-position:0% 50%}
-}
-
-.container { width:100%; max-width:440px; padding:20px; }
-
-.card {
-  background: rgba(0,0,0,0.45);
-  border-radius: 24px;
-  overflow: hidden;
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-}
-
-.banner {
-  height: 130px;
-  background: #5865F2;
-  background-size: cover;
-  background-position: center;
-}
-
-.avatar-container {
-  position: relative;
-  text-align: center;
-  margin-top: -80px;
-}
-
-.avatar {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  border: 8px solid #11121a;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-}
-
-.status-ring {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 44px;
-  height: 44px;
-  background: #11121a;
-  border-radius: 50%;
-  border: 6px solid #11121a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.status-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #747f8d;
-}
-
-.status-ring.online .status-dot   { background:#3ba55c; animation:pulse 2s infinite; }
-.status-ring.idle .status-dot     { background:#faa61a; }
-.status-ring.dnd .status-dot      { background:#ed4245; }
-.status-ring.offline .status-dot  { background:#747f8d; }
-
-@keyframes pulse {
-  0% {box-shadow:0 0 0 0 rgba(59,165,92,0.7);}
-  70% {box-shadow:0 0 0 10px rgba(59,165,92,0);}
-  100% {box-shadow:0 0 0 0 rgba(59,165,92,0);}
-}
-
-.info { padding:20px 30px 30px; text-align:center; }
-
-#username { font-size:28px; font-weight:700; margin-bottom:8px; }
-#username span { font-weight:400; color:#b9bbbe; }
-
-.bio {
-  color:#dcddde;
-  font-size:16px;
-  line-height:1.6;
-  margin:16px 0;
-  min-height:48px;
-}
-
-.badges { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin:20px 0; }
-.badge { width:36px; height:36px; border-radius:50%; }
-
-.invite-btn {
-  display:block;
-  margin:0 30px 20px;
-  padding:14px;
-  background:#5865F2;
-  color:white;
-  text-align:center;
-  border-radius:12px;
-  text-decoration:none;
-  font-weight:600;
-  transition:.3s;
-}
-.invite-btn:hover { background:#4752c4; transform:translateY(-2px); }
-
-.center { text-align:center; padding:60px 20px; }
-.loading-img { width:90px; animation:spin 1.5s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
-
-.hidden { display:none; }

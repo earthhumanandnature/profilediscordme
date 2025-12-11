@@ -4,43 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Discord Profile</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css">
   <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico"/>
 </head>
 <body>
   <div class="container">
+    <!-- Profile Card -->
     <div id="profile-card" class="card hidden">
       <div class="banner" id="banner"></div>
+      
       <div class="avatar-container">
         <img id="avatar" class="avatar" alt="Avatar"/>
-        <div id="status" class="status"></div>
+        <div id="status" class="status-ring">
+          <div class="status-dot"></div>
+        </div>
       </div>
 
       <div class="info">
         <h1 id="username"></h1>
-        <p id="bio" class="bio"></p>
-
+        <p id="bio" class="bio">Đang tải mô tả...</p>
         <div class="badges" id="badges"></div>
       </div>
 
       <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
          class="invite-btn" target="_blank">
-        ↗ Thêm bot để xem profile của bạn
+        Thêm bot để xem profile
       </a>
     </div>
 
-    <div id="loading" class="loading">
-      <img src="https://discord.com/assets/5d92ff9153b9e4f8e259.png" alt="Loading"/>
-      <p>Đang tải profile...</p>
+    <!-- Loading -->
+    <div id="loading" class="center">
+      <img src="loading.png" alt="Loading" class="loading-img"/>
+      <p>Đang tải profile đẹp của bạn...</p>
     </div>
 
-    <div id="error" class="error hidden">
-      <h2>Không thể tải profile</h2>
-      <p>Bạn chưa đăng nhập Discord hoặc chưa thêm bot.</p>
+    <!-- Error -->
+    <div id="error" class="center hidden">
+      <h2>Chưa đăng nhập Discord</h2>
+      <p>Hãy thêm bot để xem profile nha!</p>
       <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
-         class="invite-btn">
-        → Đăng nhập với Discord
-      </a>
+         class="invite-btn">Đăng nhập ngay</a>
     </div>
   </div>
 

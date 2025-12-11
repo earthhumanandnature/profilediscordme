@@ -22,54 +22,105 @@ body {
 }
 
 .container {
-  perspective: 1500px; /* quan trọng cho hiệu ứng 3D */
+  perspective: 2000px;
   padding: 20px;
+  width: 100%;
 }
 
 .card {
   position: relative;
-  width: 100%;
   max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
   background: rgba(0, 0, 0, 0.45);
   border-radius: 24px;
   overflow: hidden;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
   transform-style: preserve-3d;
 }
 
-/* Khi chuột hover → card phồng + glow */
+/* Hiệu ứng nghiêng + phồng khi hover */
 .card:hover {
-  transform: translateY(-15px) scale(1.05);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
-              0 0 50px rgba(88, 101, 242, 0.6);
+  transform: translateY(-10px) scale(1.04);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(88,101,242,0.5);
 }
 
-/* Hiệu ứng nghiêng theo chuột */
-.card.tilt {
-  transition: transform 0.1s ease-out;
+.banner {
+  height: 130px;
+  background: #5865F2;
+  background-size: cover;
+  background-position: center;
 }
 
-/* Nút nhạc trong card */
-.music-toggle */
+/* Avatar + nút xanh giống Discord thật */
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  margin: -80px auto 20px;
+}
+
+.avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 8px solid #0f0f23;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+  transition: border-radius 0.3s;
+}
+
+.avatar:hover {
+  border-radius: 38%;
+}
+
+/* Nút trạng thái xanh giống hệt Discord */
+.status-ring {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 46px;
+  height: 46px;
+  background: #232428;
+  border: 6px solid #0f0f23;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.status-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  background: #747f8d;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.status-ring.online .status-dot   { background: #3ba55c; }
+.status-ring.idle .status-dot     { background: #faa61a; }
+.status-ring.dnd .status-dot      { background: #ed4245; }
+.status-ring.offline .status-dot  { background: #747f8d; }
+
+/* Nút nhạc */
 .music-toggle {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  width: 56px;
-  height: 56px;
-  background: rgba(88, 101, 242, 0.9);
-  backdrop-filter: blur(10px);
+  width: 60px;
+  height: 60px;
+  background: rgba(88, 101, 242, 0.95);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 10;
-  border: 3px solid rgba(255,255,255,0.2);
+  border: 4px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
   transition: all 0.4s ease;
+  z-index: 10;
 }
 
 .music-toggle:hover {
@@ -78,46 +129,15 @@ body {
 }
 
 .music-toggle.playing {
-  animation: musicPulse 2s infinite;
+  animation: pulse 2s infinite;
 }
 
-@keyframes musicPulse {
-  0% { box-shadow: 0 0 0 0 rgba(114, 137, 218, 0.8); }
-  70% { box-shadow: 0 0 0 20px rgba(114, 137, 218, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(114, 137, 218, 0); }
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(114,137,218,0.8); }
+  70% { box-shadow: 0 0 0 20px rgba(114,137,218,0); }
+  100% { box-shadow: 0 0 0 0 rgba(114,137,218,0); }
 }
 
-/* Phần còn lại giữ nguyên như cũ */
-.banner { height: 120px; background: #5865F2; background-size: cover; background-position: center; }
-.avatar-container { position: relative; margin: -70px auto 0; text-align: center; }
-.avatar { width: 140px; height: 140px; border-radius: 50%; border: 8px solid #0f0f23; box-shadow: 0 6px 25px rgba(0,0,0,0.7); }
-.status { position: absolute; bottom: 10px; right: 10px; width: 34px; height: 34px; background: #232428; border-radius: 50%; border: 5px solid #0f0f23; }
-.status::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #747f8d; }
-.status.online::after   { background: #3ba55c; }
-.status.idle::after     { background: #faa61a; }
-.status.dnd::after      { background: #ed4245; }
-.status.offline::after  { background: #747f8d; }
-
-.info { padding: 20px; text-align: center; }
-#username { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-#username span { color: #b9bbbe; font-weight: 400; }
-.bio { color: #dcddde; font-size: 15px; line-height: 1.6; margin: 15px 0; min-height: 24px; }
-.badges { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
-.badge { width: 36px; height: 36px; border-radius: 50%; }
-
-.invite-btn {
-  display: block; margin: 20px; padding: 14px;
-  background: #5865F2; border-radius: 12px; text-align: center;
-  text-decoration: none; color: white; font-weight: 600;
-  transition: 0.3s;
-}
-.invite-btn:hover { background: #4752c4; transform: scale(1.03); }
-
-.loading, .error { text-align: center; padding: 60px 20px; }
-.loading-img {
-  width: 100px;
-  animation: spin 1.5s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.hidden { display: none; }
+.info { padding: 0 20px 20px; text-align: center; }
+#username { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+#username span { color: #b9bb

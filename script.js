@@ -1,147 +1,88 @@
-class DiscordProfile {
-    constructor() {
-        this.clientId = '1416381905024323755';
-        this.redirectUri = 'https://mydiscordprofile.vercel.app';
-        this.token = null;
-        this.userData = null;
-        this.init();
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get('code');
+
+if (!code) {
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('error').classList.remove('hidden');
+} else {
+  fetch(`https://discord.com/api/v10/oauth2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: '1416381905024323755',
+      client_secret: '8nAeNgEpThAgzJ0HgU2XGI05b9F-CoYG', // ← RẤT QUAN TRỌNG
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: 'https://mydiscordprofile.vercel.app',
+      scope: 'identify',
+    })
+  })
+  .then(res => res.json())
+  .then(tokenData => {
+    if (tokenData.access_token) {
+      return fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+    }
+    throw new Error('No access token');
+  })
+  .then(res => res.json())
+  .then(user => {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('profile-card').classList.remove('hidden');
+
+    // Avatar
+    const avatarUrl = user.avatar 
+      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=256`
+      : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`;
+    document.getElementById('avatar').src = avatarUrl;
+
+    // Username
+    const globalName = user.global_name || user.username;
+    document.getElementById('username').innerHTML = 
+      `${globalName} <span>#${user.discriminator}</span>`;
+
+    // Banner
+    if (user.banner) {
+      const bannerUrl = user.banner.startsWith('a_')
+        ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.gif?size=480`
+        : `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.webp?size=480`;
+      document.getElementById('banner').style.backgroundImage = `url('${bannerUrl}')`;
     }
 
-    init() {
-        var params = new URLSearchParams(window.location.search);
-        var tokenFromUrl = params.get('token');
+    // Bio (About Me) - cần scope guilds + thêm endpoint /users/@me/profile nhưng hiện tại chỉ identify thì không có
+    // Nếu bạn thêm scope `guilds` và xử lý backend thì có thể lấy được
 
-        if (tokenFromUrl) {
-            this.token = tokenFromUrl;
-            localStorage.setItem('discord_token', this.token);
-            window.history.replaceState({}, document.title, '/');
-            this.loadUserData();
-            return;
-        }
+    // Trạng thái (cần bot online và dùng gateway hoặc thêm endpoint backend)
+    // Ở đây mình giả lập một chút để đẹp, bạn có thể bỏ nếu không muốn
+    const statuses = ['online', 'idle','dnd','offline'];
+    const status = statuses[Math.floor(Math.random()*4)];
+    document.getElementById('status').classList.add(status);
 
-        this.token = localStorage.getItem('discord_token');
-        if (this.token) {
-            this.loadUserData();
-        }
+    // Badges đơn giản (chỉ vài badge công khai từ user.flags)
+    const badgesDiv = document.getElementById('badges');
+    const flags = user.flags || 0;
+    const premium = user.premium_type || 0;
 
-        this.bindEvents();
+    if (premium > 0) {
+      const img = document.createElement('img');
+      img.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
+      img.className = 'badge';
+      img.title = 'Nitro';
+      badgesDiv.appendChild(img);
     }
 
-    bindEvents() {
-        var loginBtn = document.getElementById('login-btn');
-        var logoutBtn = document.getElementById('logout-btn');
-
-        if (loginBtn) {
-            loginBtn.addEventListener('click', function() {
-                this.login();
-            }.bind(this));
-        }
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function() {
-                this.logout();
-            }.bind(this));
-        }
+    if (flags & (1 << 2)) { // Staff
+      const img = document.createElement('img');
+      img.src = 'https://discord.com/assets/4e2f3b5a7b3d7d3e2b9d6d106d7e7e7e.svg';
+      img.className = 'badge';
+      badgesDiv.appendChild(img);
     }
-
-    login() {
-        var url = 'https://discord.com/oauth2/authorize?client_id=' + this.clientId +
-                  '&redirect_uri=' + encodeURIComponent(this.redirectUri) +
-                  '&response_type=code&scope=identify';
-        window.location.href = url;
-    }
-
-    async loadUserData() {
-        if (!this.token) return;
-
-        try {
-            var res = await fetch('https://discord.com/api/v10/users/@me', {
-                headers: { 'Authorization': 'Bearer ' + this.token }
-            });
-
-            if (!res.ok) throw new Error('Invalid token');
-
-            this.userData = await res.json();
-            this.displayProfile();
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('profile-container').style.display = 'flex';
-        } catch (e) {
-            console.error(e);
-            this.logout();
-        }
-    }
-
-    displayProfile() {
-        if (!this.userData) return;
-
-        // Avatar
-        var avatar = this.userData.avatar
-            ? 'https://cdn.discordapp.com/avatars/' + this.userData.id + '/' + this.userData.avatar + '.webp?size=256'
-            : 'https://cdn.discordapp.com/embed/avatars/' + ((this.userData.discriminator || 0) % 5) + '.png';
-        document.getElementById('avatar').src = avatar;
-
-        // Username
-        document.getElementById('username').textContent = this.userData.global_name || this.userData.username;
-
-        // Discriminator
-        var disc = document.getElementById('discriminator');
-        if (this.userData.discriminator && this.userData.discriminator !== '0') {
-            disc.textContent = '#' + this.userData.discriminator;
-            disc.style.display = 'inline';
-        } else {
-            disc.style.display = 'none';
-        }
-
-        // Bio (mô tả thật từ Discord)
-        document.getElementById('bio').textContent = this.userData.bio || 'Chưa có mô tả...';
-
-        // User ID
-        document.getElementById('user-id').textContent = this.userData.id;
-
-        // Badges (sửa an toàn, không <<)
-        var container = document.getElementById('badges');
-        container.innerHTML = '';
-        var flags = (this.userData.flags || 0) | (this.userData.public_flags || 0);
-
-        var badgeList = [
-            { bit: 1, name: 'Staff' },
-            { bit: 2, name: 'Partner' },
-            { bit: 4, name: 'HypeSquad Events' },
-            { bit: 8, name: 'Bug Hunter Lv1' },
-            { bit: 64, name: 'Bravery' },
-            { bit: 128, name: 'Brilliance' },
-            { bit: 256, name: 'Balance' },
-            { bit: 512, name: 'Early Supporter' },
-            { bit: 16384, name: 'Bug Hunter Lv2' },
-            { bit: 131072, name: 'Verified Dev' },
-            { bit: 262144, name: 'Active Dev' }
-        ];
-
-        badgeList.forEach(function(b) {
-            if (flags & b.bit) {
-                var span = document.createElement('span');
-                span.className = 'badge';
-                span.textContent = b.name;
-                container.appendChild(span);
-            }
-        });
-
-        // Nitro
-        if (this.userData.premium_type && this.userData.premium_type > 0) {
-            var nitro = document.createElement('span');
-            nitro.className = 'badge nitro';
-            nitro.textContent = 'Nitro';
-            container.appendChild(nitro);
-        }
-    }
-
-    logout() {
-        localStorage.removeItem('discord_token');
-        document.getElementById('profile-container').style.display = 'none';
-        document.getElementById('login-container').style.display = 'flex';
-        window.location.href = '/';
-    }
+    // thêm các badge khác nếu muốn...
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('error').classList.remove('hidden');
+  });
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    new DiscordProfile();
-});

@@ -143,6 +143,56 @@ body {
   transition: 0.3s;
 }
 
+#music-toggle {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background: rgba(88, 101, 242, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  z-index: 1000;
+  transition: all 0.4s ease;
+  border: 3px solid rgba(255,255,255,0.2);
+}
+
+#music-toggle:hover {
+  transform: scale(1.15);
+  background: #7289da;
+}
+
+#music-toggle.playing {
+  animation: pulse 2s infinite;
+}
+
+#music-toggle svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(114, 137, 218, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(114, 137, 218, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(114, 137, 218, 0); }
+}
+
+/* Hiệu ứng nghiêng card theo chuột */
+.card {
+  transition: transform 0.15s ease-out;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+}
+
+/* Glow khi di chuột gần */
+.container:hover .card {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 
+              0 0 30px rgba(88, 101, 242, 0.4);
+}
+
 .invite-btn:hover {
   background: #4752c4;
   transform: scale(1.03);
@@ -165,3 +215,4 @@ body {
 }
 
 .hidden { display: none; }
+

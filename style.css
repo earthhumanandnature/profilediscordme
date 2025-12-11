@@ -35,6 +35,8 @@ body{
   box-shadow:0 10px 40px rgba(0,0,0,0.6);
   transition:all .5s ease;
   transform-style:preserve-3d;
+  will-change: transform;
+  transform: perspective(1400px) rotateX(0) rotateY(0);
 }
 .card.tilt{transition:transform .1s ease-out;}
 .card:hover{
@@ -127,3 +129,4 @@ body{
 }
 
 .hidden{display:none !important;}
+

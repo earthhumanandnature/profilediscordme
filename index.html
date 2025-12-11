@@ -8,6 +8,19 @@
   <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico"/>
 </head>
 <body>
+
+  <!-- Nút nhạc nổi góc dưới phải -->
+  <div class="music-toggle" id="musicToggle">
+    <svg viewBox="0 0 24 24" width="28" height="28">
+      <path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+    </svg>
+  </div>
+
+  <audio id="bgMusic" loop>
+    <source src="music.mp3" type="audio/mpeg">
+    Trình duyệt không hỗ trợ nhạc nền.
+  </audio>
+
   <div class="container">
     <div id="profile-card" class="card hidden">
       <div class="banner" id="banner"></div>
@@ -19,16 +32,16 @@
       <div class="info">
         <h1 id="username"></h1>
         <p id="bio" class="bio"></p>
-
         <div class="badges" id="badges"></div>
       </div>
 
       <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
          class="invite-btn" target="_blank">
-        ↗ Thêm bot để xem profile của bạn
+        Thêm bot để xem profile
       </a>
     </div>
 
+    <!-- Loading & Error giữ nguyên như cũ -->
     <div id="loading" class="loading">
       <img src="https://discord.com/assets/5d92ff9153b9e4f8e259.png" alt="Loading"/>
       <p>Đang tải profile...</p>
@@ -36,10 +49,10 @@
 
     <div id="error" class="error hidden">
       <h2>Không thể tải profile</h2>
-      <p>Bạn chưa đăng nhập Discord hoặc chưa thêm bot.</p>
+      <p>Bạn chưa đăng nhập Discord.</p>
       <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify" 
          class="invite-btn">
-        → Đăng nhập với Discord
+        Đăng nhập với Discord
       </a>
     </div>
   </div>

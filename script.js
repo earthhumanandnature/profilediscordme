@@ -7,7 +7,6 @@ const audio = document.getElementById('bgMusic');
 const statusRing = document.getElementById('status');
 let isPlaying = false;
 
-// ==================== DISCORD OAUTH ====================
 if (!code) {
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('error').classList.remove('hidden');
@@ -24,98 +23,79 @@ if (!code) {
       scope: 'identify',
     })
   })
-  .then(res => res.json())
-  .then(tokenData => {
-    if (!tokenData.access_token) throw new Error('No token');
+  .then(r => r.json())
+  .then(t => {
+    if (!t.access_token) throw '';
     return fetch('https://discord.com/api/v10/users/@me', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      headers: { Authorization: `Bearer ${t.access_token}` }
     });
   })
-  .then(res => res.json())
+  .then(r => r.json())
   .then(user => {
     document.getElementById('loading').classList.add('hidden');
     card.classList.remove('hidden');
 
     // Avatar
-    const avatarUrl = user.avatar
+    const av = user.avatar
       ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.webp?size=256`
       : `https://cdn.discordapp.com/embed/avatars/${(user.discriminator || 0) % 5}.png`;
-    document.getElementById('avatar').src = avatarUrl;
+    document.getElementById('avatar').src = av;
 
-    // Username
+    // Tên
     const name = user.global_name || user.username;
     document.getElementById('username').innerHTML = `${name} <span>#${user.discriminator || '0000'}</span>`;
 
     // Banner
     if (user.banner) {
-      const format = user.banner.startsWith('a_') ? 'gif' : 'webp';
+      const fmt = user.banner.startsWith('a_') ? 'gif' : 'webp';
       document.getElementById('banner').style.backgroundImage = 
-        `url('https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${format}?size=480')`;
+        `url('https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${fmt}?size=480')`;
     }
 
-    // Trạng thái giả lập (vì scope identify không có presence thật)
-    const statuses = ['online', 'idle', 'dnd', 'offline'];
-    const status = statuses[Math.floor(Math.random() * 4)];
-    statusRing.className = `status-ring ${status}`; // thêm class online/idle/dnd/offline
+    // Trạng thái giả lập
+    const s = ['online','idle','dnd','offline'][Math.floor(Math.random()*4)];
+    statusRing.className = `status-ring ${s}`;
 
     // Nitro badge
-    if (user.premium_type && user.premium_type > 0) {
-      const img = document.createElement('img');
-      img.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
-      img.className = 'badge';
-      img.title = 'Nitro';
-      document.getElementById('badges').appendChild(img);
+    if (user.premium_type > 0) {
+      const i = document.createElement('img');
+      i.src = 'https://discord.com/assets/648f50e7d79f44cf13e23a88a58f403e.svg';
+      i.className = 'badge';
+      i.title = 'Nitro';
+      document.getElementById('badges').appendChild(i);
     }
 
-    // BẬT HIỆU ỨNG NGHIÊNG NGAY KHI CARD HIỆN
-    enableTiltEffect();
+    // Bật hiệu ứng nghiêng
+    enableTilt();
   })
-  .catch(err => {
-    console.error(err);
+  .catch(() => {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('error').classList.remove('hidden');
   });
 }
 
-// ==================== NÚT NHẠC ====================
-musicToggle.addEventListener('click', () => {
-  if (isPlaying) {
-    audio.pause();
-    musicToggle.classList.remove('playing');
-  } else {
-    audio.play().catch(() => {});
-    musicToggle.classList.add('playing');
-  }
+// Nút nhạc
+musicToggle.onclick = () => {
+  if (isPlaying) audio.pause();
+  else audio.play();
   isPlaying = !isPlaying;
-});
-document.body.addEventListener('click', () => audio.play().catch(() => {}), { once: true });
+  musicToggle.classList.toggle('playing', isPlaying);
+};
+document.body.addEventListener('click', () => audio.play(), { once: true });
 
-// ==================== HIỆU ỨNG NGHIÊNG CARD SIÊU MƯỢT ====================
-function enableTiltEffect() {
-  const handleMove = (e) => {
-    if (window.innerWidth < 768) return;
-
+// HIỆU ỨNG NGHIÊNG CARD SIÊU MƯỢT
+function enableTilt() {
+  const move = (e) => {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
-
-    const rotateY = x * 0.07;   // nghiêng mạnh hơn
-    const rotateX = -y * 0.07;
-
-    card.style.transform = `
-      perspective(1500px)
-      rotateX(${rotateX}deg)
-      rotateY(${rotateY}deg)
-      scale(1.05)
-    `;
+    const rotY = x * 0.08;
+    const rotX = -y * 0.08;
+    card.style.transform = `perspective(2000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.05)`;
   };
-
-  const handleLeave = () => {
-    card.style.transform = 'perspective(1500px) rotateX(0) rotateY(0) scale(1)';
+  const leave = () => {
+    card.style.transform = 'perspective(2000px) rotateX(0) rotateY(0) scale(1)';
   };
-
-  document.addEventListener('mousemove', handleMove);
-  card.addEventListener('mouseleave', handleLeave);
+  document.addEventListener('mousemove', move);
+  card.addEventListener('mouseleave', leave);
 }
-// Nếu reload trang khi đã login rồi → vẫn có hiệu ứng nghiêng
-if (!card.classList.contains('hidden')) enableTiltEffect();

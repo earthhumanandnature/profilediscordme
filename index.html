@@ -1,61 +1,66 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>3D Water Background (Profile)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Discord Profile</title>
+
+  <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico">
+  <link rel="stylesheet" href="style.css">
+
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #05080f;
-      font-family: Arial, sans-serif;
-    }
+    /* ===== WATER BACKGROUND ===== */
     #water-bg {
       position: fixed;
       inset: 0;
-      z-index: -1;
+      z-index: -10;
+      display: none; /* chỉ hiện sau login */
     }
-    #controls {
+
+    #water-controls {
       position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.45);
-      padding: 12px 16px;
-      border-radius: 12px;
-      display: flex;
+      display: none;
       gap: 12px;
-      align-items: center;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.45);
+      border-radius: 14px;
       color: #fff;
-    }
-    #controls label {
+      z-index: 20;
+      align-items: center;
       font-size: 12px;
+    }
+
+    #water-controls label {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
-    #controls input[type="range"] {
-      width: 120px;
+
+    #water-controls input[type="range"] {
+      width: 110px;
     }
-    #controls button {
-      padding: 6px 14px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+
+    #water-controls button {
       background: #2b7cff;
       color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
 
+<!-- 🌊 WATER CANVAS -->
 <canvas id="water-bg"></canvas>
 
-<div id="controls">
+<!-- 🎛 CONTROLS -->
+<div id="water-controls">
   <label>
     Độ cao sóng
     <input id="waveHeight" type="range" min="0" max="3" step="0.1" value="1.2">
@@ -71,17 +76,72 @@
   <button id="pulseBtn">🌊 Tạo sóng</button>
 </div>
 
+<!-- 🎵 MUSIC -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<div class="container">
+
+  <!-- PROFILE CARD -->
+  <div id="profile-card" class="card hidden">
+    <div class="music-toggle" id="musicToggle">
+      <svg viewBox="0 0 24 24">
+        <path fill="currentColor"
+          d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+    </div>
+
+    <div class="banner" id="banner"></div>
+
+    <div class="avatar-container">
+      <img id="avatar" class="avatar">
+      <div id="status" class="status-ring">
+        <div class="status-dot"></div>
+      </div>
+    </div>
+
+    <div class="info">
+      <h1 id="username"></h1>
+      <p class="bio" id="bio"></p>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <a class="invite-btn"
+      href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify"
+      target="_blank">
+      Xem profile của bạn
+    </a>
+  </div>
+
+  <!-- WELCOME -->
+  <div id="welcome" class="welcome">
+    <img src="loading.png" class="welcome-img">
+    <h2>Chào mừng!</h2>
+    <p>Nhấn nút bên dưới để xem profile Discord</p>
+    <a class="login-btn"
+      href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
+      Đăng nhập với Discord
+    </a>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+
+<!-- 🌊 THREE WATER -->
 <script type="module">
 import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
 
 const canvas = document.getElementById('water-bg');
 const scene = new THREE.Scene();
+
 const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 50);
 camera.position.set(0, 15, 0);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 
 const uniforms = {
@@ -89,84 +149,81 @@ const uniforms = {
   uWaveHeight: { value: 1.2 },
   uWaveSpeed: { value: 1.5 },
   uPulseTime: { value: -10 },
-  uPulseCenter: { value: new THREE.Vector2(0, 0) },
+  uPulseCenter: { value: new THREE.Vector2() },
   uColor: { value: new THREE.Color('#2b8cff') }
 };
 
-const geometry = new THREE.PlaneGeometry(20, 20, 200, 200);
+const geometry = new THREE.PlaneGeometry(20, 20, 220, 220);
 const material = new THREE.ShaderMaterial({
   uniforms,
   vertexShader: `
-    uniform float uTime;
-    uniform float uWaveHeight;
-    uniform float uWaveSpeed;
-    uniform float uPulseTime;
+    uniform float uTime, uWaveHeight, uWaveSpeed, uPulseTime;
     uniform vec2 uPulseCenter;
     varying float vWave;
+
     void main() {
       vec3 pos = position;
-      float wave = sin(pos.x * 1.2 + uTime * uWaveSpeed)
-                 + cos(pos.y * 1.1 + uTime * uWaveSpeed);
-      float dist = distance(pos.xz, uPulseCenter);
-      float pulse = sin(dist * 2.0 - (uTime - uPulseTime) * 6.0)
-                  * exp(-dist * 0.25)
+      float wave = sin(pos.x + uTime * uWaveSpeed)
+                 + cos(pos.y + uTime * uWaveSpeed);
+
+      float d = distance(pos.xz, uPulseCenter);
+      float pulse = sin(d * 2.0 - (uTime - uPulseTime) * 6.0)
+                  * exp(-d * 0.25)
                   * step(0.0, 2.5 - (uTime - uPulseTime));
+
       pos.y += wave * uWaveHeight + pulse * 3.0;
       vWave = pos.y;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
     }
   `,
   fragmentShader: `
     uniform vec3 uColor;
     varying float vWave;
     void main() {
-      float shade = vWave * 0.15 + 0.5;
+      float shade = vWave * 0.15 + 0.6;
       gl_FragColor = vec4(uColor * shade, 1.0);
     }
-  `,
-  wireframe: false
+  `
 });
 
-const water = new THREE.Mesh(geometry, material);
-scene.add(water);
+scene.add(new THREE.Mesh(geometry, material));
 
-function animate(t) {
+function animate(t){
   uniforms.uTime.value = t * 0.001;
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
 
-// Resize
-window.addEventListener('resize', () => {
+window.addEventListener('resize', ()=>{
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// UI controls
-document.getElementById('waveHeight').oninput = e =>
-  uniforms.uWaveHeight.value = +e.target.value;
-
-document.getElementById('waveSpeed').oninput = e =>
-  uniforms.uWaveSpeed.value = +e.target.value;
-
-document.getElementById('waveColor').oninput = e =>
-  uniforms.uColor.value.set(e.target.value);
-
-function createPulse(x, y) {
-  uniforms.uPulseCenter.value.set(x, y);
+function pulse(x,z){
+  uniforms.uPulseCenter.value.set(x,z);
   uniforms.uPulseTime.value = uniforms.uTime.value;
 }
 
-// Button pulse
-document.getElementById('pulseBtn').onclick = () => createPulse(0, 0);
-
-// Click anywhere → ripple
-canvas.addEventListener('click', e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 20 - 10;
-  const y = ((rect.bottom - e.clientY) / rect.height) * 20 - 10;
-  createPulse(x, y);
+canvas.addEventListener('click', e=>{
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX/r.width)*20 - 10;
+  const z = ((r.bottom-e.clientY)/r.height)*20 - 10;
+  pulse(x,z);
 });
+
+pulseBtn.onclick = ()=> pulse(0,0);
+waveHeight.oninput = e=> uniforms.uWaveHeight.value = +e.target.value;
+waveSpeed.oninput  = e=> uniforms.uWaveSpeed.value  = +e.target.value;
+waveColor.oninput  = e=> uniforms.uColor.value.set(e.target.value);
+
+/* 🔑 bật nền khi login */
+const observer = new MutationObserver(()=>{
+  if(!profileCard.classList.contains('hidden')){
+    waterBg.style.display = 'block';
+    waterControls.style.display = 'flex';
+  }
+});
+observer.observe(profileCard,{attributes:true});
 </script>
 
 </body>

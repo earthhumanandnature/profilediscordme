@@ -1,54 +1,192 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Discord Profile</title>
+
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico">
+
+  <!-- IMPORT MAP THREE -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js"
+    }
+  }
+  </script>
+
+  <style>
+    /* ===== WATER BACKGROUND ===== */
+    #water-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      display: none;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
 </head>
+
 <body>
 
-  <audio id="bgMusic" loop preload="auto">
-    <source src="music.mp3" type="audio/mpeg">
-  </audio>
+<!-- WATER BACKGROUND -->
+<div id="water-bg"></div>
 
-  <div class="container">
+<audio id="bgMusic" loop preload="auto">
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
 
-    <!-- CARD PROFILE - chỉ hiện khi đã login -->
-    <div id="profile-card" class="card hidden">
-      <div class="music-toggle" id="musicToggle">
-        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-      </div>
+<div class="container">
 
-      <div class="banner" id="banner"></div>
-
-      <div class="avatar-container">
-        <img id="avatar" class="avatar" alt="Avatar">
-        <div id="status" class="status-ring"><div class="status-dot"></div></div>
-      </div>
-
-      <div class="info">
-        <h1 id="username"></h1>
-        <p class="bio" id="bio"></p>
-        <div class="badges" id="badges"></div>
-      </div>
-
-      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify"
-         class="invite-btn" target="_blank">Xem profile của bạn</a>
+  <!-- PROFILE CARD -->
+  <div id="profile-card" class="card hidden">
+    <div class="music-toggle" id="musicToggle">
+      <svg viewBox="0 0 24 24">
+        <path fill="currentColor"
+          d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
     </div>
 
-    <!-- TRẠNG THÁI CHƯA ĐĂNG NHẬP - gọn nhẹ xinh xắn -->
-    <div id="welcome" class="welcome">
-      <img src="loading.png" class="welcome-img" alt="Loading">
-      <h2>Chào mừng!</h2>
-      <p>Nhấn nút bên dưới để xem profile Discord đẹp lung linh</p>
-      <a href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify"
-         class="login-btn">Đăng nhập với Discord</a>
+    <div class="banner" id="banner"></div>
+
+    <div class="avatar-container">
+      <img id="avatar" class="avatar">
+      <div id="status" class="status-ring">
+        <div class="status-dot"></div>
+      </div>
     </div>
 
+    <div class="info">
+      <h1 id="username"></h1>
+      <p class="bio" id="bio"></p>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <a class="invite-btn"
+       href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify"
+       target="_blank">
+       Xem profile của bạn
+    </a>
   </div>
 
-  <script src="script.js"></script>
+  <!-- CHƯA LOGIN -->
+  <div id="welcome" class="welcome">
+    <img src="loading.png" class="welcome-img">
+    <h2>Chào mừng!</h2>
+    <p>Nhấn nút bên dưới để xem profile Discord</p>
+    <a class="login-btn"
+       href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
+       Đăng nhập với Discord
+    </a>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+
+<!-- ================= WATER SCRIPT ================= -->
+<script type="module">
+import * as THREE from 'three';
+
+const waterContainer = document.getElementById('water-bg');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000814);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+waterContainer.appendChild(renderer.domElement);
+
+const SIZE = 200;
+const geometry = new THREE.PlaneGeometry(SIZE, SIZE, 256, 256);
+geometry.rotateX(-Math.PI / 2);
+
+const uniforms = {
+  uTime: { value: 0 },
+  uPulseTime: { value: -10 },
+  uPulseCenter: { value: new THREE.Vector2() }
+};
+
+const material = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader: `
+    uniform float uTime;
+    uniform float uPulseTime;
+    uniform vec2 uPulseCenter;
+    varying float vH;
+
+    void main() {
+      vec3 p = position;
+      float wave = sin(p.x * 0.05 + uTime) * 1.5;
+      float d = distance(p.xz, uPulseCenter);
+      float pulse = sin(d * 1.5 - (uTime - uPulseTime) * 8.0)
+                  * exp(-d * 0.08) * 3.0;
+      p.y += wave + pulse;
+      vH = p.y;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0);
+    }
+  `,
+  fragmentShader: `
+    varying float vH;
+    void main() {
+      vec3 deep = vec3(0.0,0.18,0.3);
+      vec3 shallow = vec3(0.3,0.6,1.0);
+      float h = clamp((vH + 3.0)/6.0,0.0,1.0);
+      gl_FragColor = vec4(mix(deep,shallow,h),1.0);
+    }
+  `,
+  side: THREE.DoubleSide
+});
+
+const water = new THREE.Mesh(geometry, material);
+scene.add(water);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(0, SIZE * 0.9, 0);
+camera.up.set(0,0,-1);
+camera.lookAt(0,0,0);
+
+renderer.domElement.addEventListener('click', e => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera({x,y}, camera);
+  const hit = ray.intersectObject(water);
+  if(hit[0]){
+    uniforms.uPulseCenter.value.set(hit[0].point.x, hit[0].point.z);
+    uniforms.uPulseTime.value = uniforms.uTime.value;
+  }
+});
+
+function animate(t){
+  requestAnimationFrame(animate);
+  uniforms.uTime.value = t * 0.001;
+  renderer.render(scene, camera);
+}
+animate(0);
+
+/* === HIỆN WATER KHI LOGIN THÀNH CÔNG === */
+const observer = new MutationObserver(()=>{
+  const card = document.getElementById('profile-card');
+  if(!card.classList.contains('hidden')){
+    waterContainer.style.display = 'block';
+  }
+});
+observer.observe(document.getElementById('profile-card'), { attributes: true });
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+
 </body>
 </html>

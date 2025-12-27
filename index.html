@@ -2,101 +2,42 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Discord Profile</title>
+  <title>3D Water Simulation (Top-down Fixed)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico">
-
-  <!-- IMPORT MAP THREE -->
+  <!-- Import map để trình duyệt hiểu "three" -->
   <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@0.158.0/build/three.module.js"
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/": "https://unpkg.com/three@0.158.0/examples/jsm/"
     }
   }
   </script>
 
   <style>
-    /* ===== WATER BACKGROUND ===== */
-    #water-bg {
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      display: none;
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
     }
-
     canvas {
       display: block;
     }
   </style>
 </head>
-
 <body>
 
-<!-- WATER BACKGROUND -->
-<div id="water-bg"></div>
-
-<audio id="bgMusic" loop preload="auto">
-  <source src="music.mp3" type="audio/mpeg">
-</audio>
-
-<div class="container">
-
-  <!-- PROFILE CARD -->
-  <div id="profile-card" class="card hidden">
-    <div class="music-toggle" id="musicToggle">
-      <svg viewBox="0 0 24 24">
-        <path fill="currentColor"
-          d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-      </svg>
-    </div>
-
-    <div class="banner" id="banner"></div>
-
-    <div class="avatar-container">
-      <img id="avatar" class="avatar">
-      <div id="status" class="status-ring">
-        <div class="status-dot"></div>
-      </div>
-    </div>
-
-    <div class="info">
-      <h1 id="username"></h1>
-      <p class="bio" id="bio"></p>
-      <div class="badges" id="badges"></div>
-    </div>
-
-    <a class="invite-btn"
-       href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify"
-       target="_blank">
-       Xem profile của bạn
-    </a>
-  </div>
-
-  <!-- CHƯA LOGIN -->
-  <div id="welcome" class="welcome">
-    <img src="loading.png" class="welcome-img">
-    <h2>Chào mừng!</h2>
-    <p>Nhấn nút bên dưới để xem profile Discord</p>
-    <a class="login-btn"
-       href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
-       Đăng nhập với Discord
-    </a>
-  </div>
-
-</div>
-
-<script src="script.js"></script>
-
-<!-- ================= WATER SCRIPT ================= -->
 <script type="module">
 import * as THREE from 'three';
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
 
 const waterContainer = document.getElementById('water-bg');
 
-/* ================= SCENE ================= */
+/* ========== SCENE ========= */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000814);
 
@@ -105,16 +46,17 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 waterContainer.appendChild(renderer.domElement);
 
-/* ================= PARAMS ================= */
+/* ========== PARAMS ========= */
 const params = {
   waveHeight: 1.8,
   waveSpeed: 1.0,
   waveFreq: 0.05,
-  pulseStrength: 3.0,
+  pulseStrength: 3.5,
+  pulseDuration: 2.5, // ⏱ thời gian tồn tại sóng (giây)
   tiltStrength: 0.25
 };
 
-/* ================= WATER ================= */
+/* ========== WATER ========= */
 const SIZE = 200;
 const geo = new THREE.PlaneGeometry(SIZE, SIZE, 256, 256);
 geo.rotateX(-Math.PI / 2);
@@ -122,7 +64,8 @@ geo.rotateX(-Math.PI / 2);
 const uniforms = {
   uTime: { value: 0 },
   uPulseTime: { value: -10 },
-  uPulseCenter: { value: new THREE.Vector2() },
+  uPulseDuration: { value: params.pulseDuration },
+  uPulseCenter: { value: new THREE.Vector2(0,0) },
   uWaveHeight: { value: params.waveHeight },
   uWaveSpeed: { value: params.waveSpeed },
   uWaveFreq: { value: params.waveFreq },
@@ -136,9 +79,12 @@ const mat = new THREE.ShaderMaterial({
     uniform float uWaveHeight;
     uniform float uWaveSpeed;
     uniform float uWaveFreq;
+
     uniform float uPulseTime;
+    uniform float uPulseDuration;
     uniform float uPulseStrength;
     uniform vec2 uPulseCenter;
+
     varying float vH;
 
     void main(){
@@ -148,11 +94,18 @@ const mat = new THREE.ShaderMaterial({
         sin(p.x * uWaveFreq + uTime * uWaveSpeed) +
         cos(p.z * uWaveFreq + uTime * uWaveSpeed);
 
-      float d = distance(p.xz, uPulseCenter);
-      float pulse =
-        sin(d * 1.5 - (uTime - uPulseTime) * 8.0)
-        * exp(-d * 0.08)
-        * uPulseStrength;
+      float pulse = 0.0;
+      float life = uTime - uPulseTime;
+
+      if(life > 0.0 && life < uPulseDuration){
+        float d = distance(p.xz, uPulseCenter);
+        float fade = 1.0 - (life / uPulseDuration);
+        pulse =
+          sin(d * 1.5 - life * 8.0) *
+          exp(-d * 0.08) *
+          uPulseStrength *
+          fade;
+      }
 
       p.y += baseWave * uWaveHeight + pulse;
       vH = p.y;
@@ -175,59 +128,55 @@ const mat = new THREE.ShaderMaterial({
 const water = new THREE.Mesh(geo, mat);
 scene.add(water);
 
-/* ================= CAMERA ================= */
+/* ========== CAMERA ========= */
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
 const BASE_Y = SIZE * 0.9;
 camera.position.set(0, BASE_Y, 0);
 camera.up.set(0,0,-1);
 camera.lookAt(0,0,0);
 
-/* ================= SMOOTH TILT ================= */
-let targetTiltX = 0, targetTiltZ = 0;
-let currentTiltX = 0, currentTiltZ = 0;
-
-window.addEventListener('mousemove', e=>{
-  const nx = (e.clientX / innerWidth - 0.5) * 2;
-  const ny = (e.clientY / innerHeight - 0.5) * 2;
-
-  targetTiltX = ny * params.tiltStrength;
-  targetTiltZ = nx * params.tiltStrength;
+/* ========== SMOOTH TILT ========= */
+let targetX=0,targetZ=0,curX=0,curZ=0;
+addEventListener('mousemove',e=>{
+  const nx=(e.clientX/innerWidth-0.5)*2;
+  const ny=(e.clientY/innerHeight-0.5)*2;
+  targetX = ny * params.tiltStrength;
+  targetZ = nx * params.tiltStrength;
 });
 
-/* ================= CLICK → PULSE ================= */
-renderer.domElement.addEventListener('click', e=>{
-  const rect = renderer.domElement.getBoundingClientRect();
-  const x = ((e.clientX - rect.left)/rect.width)*2-1;
-  const y = -((e.clientY - rect.top)/rect.height)*2+1;
-
-  const ray = new THREE.Raycaster();
-  ray.setFromCamera({x,y}, camera);
-  const hit = ray.intersectObject(water);
+/* ========== CLICK → PULSE ========= */
+renderer.domElement.addEventListener('click',e=>{
+  const r=renderer.domElement.getBoundingClientRect();
+  const x=((e.clientX-r.left)/r.width)*2-1;
+  const y=-((e.clientY-r.top)/r.height)*2+1;
+  const ray=new THREE.Raycaster();
+  ray.setFromCamera({x,y},camera);
+  const hit=ray.intersectObject(water);
   if(hit[0]){
-    uniforms.uPulseCenter.value.set(hit[0].point.x, hit[0].point.z);
+    uniforms.uPulseCenter.value.set(hit[0].point.x,hit[0].point.z);
     uniforms.uPulseTime.value = uniforms.uTime.value;
   }
 });
 
-/* ================= GUI ================= */
-const gui = new GUI();
+/* ========== GUI ========= */
+const gui=new GUI();
 gui.add(params,'waveHeight',0,4).onChange(v=>uniforms.uWaveHeight.value=v);
 gui.add(params,'waveSpeed',0,3).onChange(v=>uniforms.uWaveSpeed.value=v);
 gui.add(params,'waveFreq',0.01,0.2).onChange(v=>uniforms.uWaveFreq.value=v);
 gui.add(params,'pulseStrength',0,6).onChange(v=>uniforms.uPulseStrength.value=v);
+gui.add(params,'pulseDuration',1,4).onChange(v=>uniforms.uPulseDuration.value=v);
 gui.add(params,'tiltStrength',0,0.6);
 
-/* ================= LOOP ================= */
+/* ========== LOOP ========= */
 function animate(t){
   requestAnimationFrame(animate);
   uniforms.uTime.value = t*0.001;
 
-  // smooth tilt (LERP)
-  currentTiltX += (targetTiltX - currentTiltX)*0.05;
-  currentTiltZ += (targetTiltZ - currentTiltZ)*0.05;
+  curX += (targetX-curX)*0.05;
+  curZ += (targetZ-curZ)*0.05;
 
-  camera.position.x = currentTiltZ * 30;
-  camera.position.z = -currentTiltX * 30;
+  camera.position.x = curZ*30;
+  camera.position.z = -curX*30;
   camera.position.y = BASE_Y;
   camera.lookAt(0,0,0);
 
@@ -235,15 +184,15 @@ function animate(t){
 }
 animate(0);
 
-/* ================= SHOW AFTER LOGIN ================= */
-const obs = new MutationObserver(()=>{
+/* ========== SHOW AFTER LOGIN ========= */
+const obs=new MutationObserver(()=>{
   if(!document.getElementById('profile-card').classList.contains('hidden')){
     waterContainer.style.display='block';
   }
 });
 obs.observe(document.getElementById('profile-card'),{attributes:true});
 
-/* ================= RESIZE ================= */
+/* ========== RESIZE ========= */
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
@@ -253,4 +202,3 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
-

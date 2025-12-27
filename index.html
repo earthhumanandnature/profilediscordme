@@ -14,7 +14,7 @@
       position: fixed;
       inset: 0;
       z-index: -10;
-      display: none; /* chỉ hiện sau login */
+      display: none;
     }
 
     #water-controls {
@@ -59,7 +59,7 @@
 <!-- 🌊 WATER CANVAS -->
 <canvas id="water-bg"></canvas>
 
-<!-- 🎛 CONTROLS -->
+<!-- 🎛 WATER CONTROLS -->
 <div id="water-controls">
   <label>
     Độ cao sóng
@@ -133,14 +133,19 @@
 <script type="module">
 import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
 
-const canvas = document.getElementById('water-bg');
+/* ===== DOM ===== */
+const profileCard   = document.getElementById("profile-card");
+const waterBg       = document.getElementById("water-bg");
+const waterControls = document.getElementById("water-controls");
+
+/* ===== THREE SETUP ===== */
 const scene = new THREE.Scene();
 
 const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 50);
 camera.position.set(0, 15, 0);
 camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas: waterBg, antialias: true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 
@@ -149,11 +154,12 @@ const uniforms = {
   uWaveHeight: { value: 1.2 },
   uWaveSpeed: { value: 1.5 },
   uPulseTime: { value: -10 },
-  uPulseCenter: { value: new THREE.Vector2() },
+  uPulseCenter: { value: new THREE.Vector2(0,0) },
   uColor: { value: new THREE.Color('#2b8cff') }
 };
 
 const geometry = new THREE.PlaneGeometry(20, 20, 220, 220);
+
 const material = new THREE.ShaderMaterial({
   uniforms,
   vertexShader: `
@@ -163,6 +169,7 @@ const material = new THREE.ShaderMaterial({
 
     void main() {
       vec3 pos = position;
+
       float wave = sin(pos.x + uTime * uWaveSpeed)
                  + cos(pos.y + uTime * uWaveSpeed);
 
@@ -173,6 +180,7 @@ const material = new THREE.ShaderMaterial({
 
       pos.y += wave * uWaveHeight + pulse * 3.0;
       vWave = pos.y;
+
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
     }
   `,
@@ -188,6 +196,7 @@ const material = new THREE.ShaderMaterial({
 
 scene.add(new THREE.Mesh(geometry, material));
 
+/* ===== ANIMATE ===== */
 function animate(t){
   uniforms.uTime.value = t * 0.001;
   renderer.render(scene, camera);
@@ -195,17 +204,19 @@ function animate(t){
 }
 requestAnimationFrame(animate);
 
+/* ===== RESIZE ===== */
 window.addEventListener('resize', ()=>{
   renderer.setSize(innerWidth, innerHeight);
 });
 
+/* ===== PULSE ===== */
 function pulse(x,z){
   uniforms.uPulseCenter.value.set(x,z);
   uniforms.uPulseTime.value = uniforms.uTime.value;
 }
 
-canvas.addEventListener('click', e=>{
-  const r = canvas.getBoundingClientRect();
+waterBg.addEventListener('click', e=>{
+  const r = waterBg.getBoundingClientRect();
   const x = (e.clientX/r.width)*20 - 10;
   const z = ((r.bottom-e.clientY)/r.height)*20 - 10;
   pulse(x,z);
@@ -216,14 +227,18 @@ waveHeight.oninput = e=> uniforms.uWaveHeight.value = +e.target.value;
 waveSpeed.oninput  = e=> uniforms.uWaveSpeed.value  = +e.target.value;
 waveColor.oninput  = e=> uniforms.uColor.value.set(e.target.value);
 
-/* 🔑 bật nền khi login */
+/* ===== SHOW WATER AFTER LOGIN ===== */
 const observer = new MutationObserver(()=>{
-  if(!profileCard.classList.contains('hidden')){
-    waterBg.style.display = 'block';
-    waterControls.style.display = 'flex';
+  if (!profileCard.classList.contains("hidden")) {
+    waterBg.style.display = "block";
+    waterControls.style.display = "flex";
   }
 });
-observer.observe(profileCard,{attributes:true});
+
+observer.observe(profileCard, {
+  attributes: true,
+  attributeFilter: ["class"]
+});
 </script>
 
 </body>

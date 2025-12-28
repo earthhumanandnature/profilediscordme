@@ -307,7 +307,7 @@ animate(0);
 /* ================= SHOW AFTER LOGIN ================= */
 new MutationObserver(()=>{
   if(!document.getElementById('profile-card').classList.contains('hidden')){
-    waterContainer.style.display='block';
+    waterCanvas.style.display = 'block';
   }
 }).observe(document.getElementById('profile-card'),{attributes:true});
 
@@ -321,6 +321,7 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
+
 
 
 

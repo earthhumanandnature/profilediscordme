@@ -234,33 +234,28 @@ setInterval(()=>{
     addPulse((Math.random()-.5)*SIZE,(Math.random()-.5)*SIZE);
 },1000);
 
+const waveHeightEl = document.getElementById("waveHeight");
+const waveSpeedEl  = document.getElementById("waveSpeed");
+const waveColorEl  = document.getElementById("waveColor");
+const pulseBtnEl   = document.getElementById("pulseBtn");
+
 /* ===== CONTROL ===== */
-waveHeight.addEventListener("input", () => {
-  uniforms.uWaveHeight.value = parseFloat(waveHeight.value);
+waveHeightEl.addEventListener("input", e => {
+  uniforms.uWaveHeight.value = parseFloat(e.target.value);
 });
 
-waveSpeed.addEventListener("input", () => {
-  uniforms.uWaveSpeed.value = parseFloat(waveSpeed.value);
+waveSpeedEl.addEventListener("input", e => {
+  uniforms.uWaveSpeed.value = parseFloat(e.target.value);
 });
 
-waveColorInput.addEventListener("input", () => {
-  const c = new THREE.Color(waveColorInput.value);
-  mat.fragmentShader = `
-    varying float vH;
-    void main(){
-      vec3 deep = vec3(0., .18, .3);
-      vec3 shallow = vec3(${c.r}, ${c.g}, ${c.b});
-      float h = clamp((vH + 3.) / 6., 0., 1.);
-      gl_FragColor = vec4(mix(deep, shallow, h), 1.);
-    }
-  `;
-  mat.needsUpdate = true;
+waveColorEl.addEventListener("input", e => {
+  uniforms.uWaveColor.value.set(e.target.value);
 });
 
-pulseBtn.addEventListener("click", () => {
+pulseBtnEl.addEventListener("click", () => {
   addPulse(0, 0);
 });
-
+  
 /* ===== LOOP ===== */
 function loop(t){
   requestAnimationFrame(loop);
@@ -301,5 +296,6 @@ addEventListener("resize",()=>{
 </script>
 </body>
 </html>
+
 
 

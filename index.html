@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
+/* ===== WATER BACKGROUND ===== */
 #water-bg{
   position:fixed;
   inset:0;
@@ -54,8 +55,10 @@
 
 <body>
 
+<!-- 🌊 WATER -->
 <canvas id="water-bg"></canvas>
 
+<!-- 🎛 CONTROL -->
 <div id="water-controls">
   <label>Độ cao sóng
     <input id="waveHeight" type="range" min="0" max="4" step="0.1" value="1.8">
@@ -69,22 +72,66 @@
   <button id="pulseBtn">🌊 Tạo sóng</button>
 </div>
 
-<!-- LOGIN / PROFILE GIỮ NGUYÊN -->
+<!-- 🎵 MUSIC -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<div class="container">
+
+<!-- ===== PROFILE ===== -->
+<div id="profile-card" class="card hidden">
+  <div class="music-toggle" id="musicToggle">
+    <svg viewBox="0 0 24 24">
+      <path fill="currentColor"
+      d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+    </svg>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="avatar-container">
+    <img id="avatar" class="avatar">
+    <div id="status" class="status-ring">
+      <div class="status-dot"></div>
+    </div>
+  </div>
+
+  <div class="info">
+    <h1 id="username"></h1>
+    <p class="bio" id="bio"></p>
+    <div class="badges" id="badges"></div>
+  </div>
+
+  <a class="invite-btn"
+   href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
+   Xem profile của bạn
+  </a>
+</div>
+
+<!-- ===== WELCOME ===== -->
+<div id="welcome" class="welcome">
+  <img src="loading.png" class="welcome-img">
+  <h2>Chào mừng!</h2>
+  <p>Nhấn nút bên dưới để xem profile Discord</p>
+  <a class="login-btn"
+   href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
+   Đăng nhập với Discord
+  </a>
+</div>
+
+</div>
+
+<!-- LOGIN SCRIPT (GIỮ NGUYÊN) -->
 <script src="script.js"></script>
 
+<!-- 🌊 THREE WATER -->
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
-/* ===== ELEMENTS ===== */
-const canvas   = document.getElementById("water-bg");
+const canvas = document.getElementById("water-bg");
 const controls = document.getElementById("water-controls");
 
-const waveHeightEl = document.getElementById("waveHeight");
-const waveSpeedEl  = document.getElementById("waveSpeed");
-const waveColorEl  = document.getElementById("waveColor");
-const pulseBtnEl   = document.getElementById("pulseBtn");
-
-/* ===== SCENE ===== */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000814);
 
@@ -92,7 +139,7 @@ const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 
-/* ===== PARAMS ===== */
+/* ===== PARAM ===== */
 const params={
   waveHeight:1.8,
   waveSpeed:1,
@@ -105,20 +152,19 @@ const SIZE=200;
 const geo=new THREE.PlaneGeometry(SIZE,SIZE,256,256);
 geo.rotateX(-Math.PI/2);
 
-/* ===== UNIFORMS ===== */
 const pulses=[];
 const uniforms={
   uTime:{value:0},
-  uPulseTime:{value:-100},
+  uPulseTime:{value:-10},
   uPulseCenter:{value:new THREE.Vector2()},
   uPulseStrength:{value:params.pulseStrength},
   uWaveHeight:{value:params.waveHeight},
   uWaveSpeed:{value:params.waveSpeed},
-  uWaveFreq:{value:params.waveFreq},
-  uWaveColor:{value:new THREE.Color("#2b8cff")}
+  uWaveFreq:{value:params.waveFreq}
 };
 
-/* ===== MATERIAL ===== */
+let waveColor=new THREE.Color("#2b8cff");
+
 const mat=new THREE.ShaderMaterial({
   uniforms,
   vertexShader:`
@@ -137,12 +183,12 @@ const mat=new THREE.ShaderMaterial({
     gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
   }`,
   fragmentShader:`
-  uniform vec3 uWaveColor;
   varying float vH;
   void main(){
     vec3 deep=vec3(0.,.18,.3);
+    vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
     float h=clamp((vH+3.)/6.,0.,1.);
-    gl_FragColor=vec4(mix(deep,uWaveColor,h),1.);
+    gl_FragColor=vec4(mix(deep,shallow,h),1.);
   }`,
   side:THREE.DoubleSide
 });
@@ -184,22 +230,22 @@ setInterval(()=>{
     addPulse((Math.random()-.5)*SIZE,(Math.random()-.5)*SIZE);
 },1000);
 
-/* ===== CONTROLS (ĐÃ FIX) ===== */
-waveHeightEl.addEventListener("input",e=>{
-  uniforms.uWaveHeight.value=parseFloat(e.target.value);
-});
-
-waveSpeedEl.addEventListener("input",e=>{
-  uniforms.uWaveSpeed.value=parseFloat(e.target.value);
-});
-
-waveColorEl.addEventListener("input",e=>{
-  uniforms.uWaveColor.value.set(e.target.value);
-});
-
-pulseBtnEl.addEventListener("click",()=>{
-  addPulse(0,0);
-});
+/* ===== CONTROL ===== */
+waveHeight.oninput=e=>uniforms.uWaveHeight.value=e.target.value;
+waveSpeed.oninput=e=>uniforms.uWaveSpeed.value=e.target.value;
+waveColor.oninput=e=>{
+  waveColor=new THREE.Color(e.target.value);
+  mat.fragmentShader=`
+  varying float vH;
+  void main(){
+    vec3 deep=vec3(0.,.18,.3);
+    vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
+    float h=clamp((vH+3.)/6.,0.,1.);
+    gl_FragColor=vec4(mix(deep,shallow,h),1.);
+  }`;
+  mat.needsUpdate=true;
+};
+pulseBtn.onclick=()=>addPulse(0,0);
 
 /* ===== LOOP ===== */
 function loop(t){
@@ -225,15 +271,13 @@ function loop(t){
 loop(0);
 
 /* ===== SHOW AFTER LOGIN ===== */
-const cardEl = document.getElementById("profile-card");
-if(cardEl){
-  new MutationObserver(()=>{
-    if(!cardEl.classList.contains("hidden")){
-      canvas.style.display="block";
-      controls.style.display="flex";
-    }
-  }).observe(cardEl,{attributes:true});
-}
+new MutationObserver(()=>{
+  const card=document.getElementById("profile-card");
+  if(!card.classList.contains("hidden")){
+    canvas.style.display="block";
+    controls.style.display="flex";
+  }
+}).observe(document.getElementById("profile-card"),{attributes:true});
 
 addEventListener("resize",()=>{
   cam.aspect=innerWidth/innerHeight;
@@ -243,4 +287,3 @@ addEventListener("resize",()=>{
 </script>
 </body>
 </html>
-

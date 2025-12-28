@@ -135,16 +135,19 @@
 import * as THREE from 'three';
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
 
-const waterContainer = document.getElementById('water-bg');
+const waterCanvas = document.getElementById('water-bg');
 
 /* ================= SCENE ================= */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000814);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({
+  canvas: waterCanvas,
+  antialias: true,
+  alpha: true
+});
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
-waterContainer.appendChild(renderer.domElement);
 
 /* ================= PARAMS ================= */
 const params = {
@@ -318,4 +321,5 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
+
 

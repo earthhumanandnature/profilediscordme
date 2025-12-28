@@ -305,11 +305,14 @@ function animate(t){
 animate(0);
 
 /* ================= SHOW AFTER LOGIN ================= */
-new MutationObserver(()=>{
-  if(!document.getElementById('profile-card').classList.contains('hidden')){
+newnew MutationObserver(() => {
+  const card = document.getElementById('profile-card');
+  if (!card.classList.contains('hidden')) {
     waterCanvas.style.display = 'block';
   }
-}).observe(document.getElementById('profile-card'),{attributes:true});
+}).observe(document.getElementById('profile-card'), {
+  attributes: true
+});
 
 /* ================= RESIZE ================= */
 addEventListener('resize',()=>{
@@ -321,6 +324,7 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
+
 
 
 

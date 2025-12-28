@@ -130,116 +130,192 @@
 <script src="script.js"></script>
 
 <!-- 🌊 THREE WATER -->
+
 <script type="module">
-import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+import * as THREE from 'three';
+import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
 
-/* ===== DOM ===== */
-const profileCard   = document.getElementById("profile-card");
-const waterBg       = document.getElementById("water-bg");
-const waterControls = document.getElementById("water-controls");
+const waterContainer = document.getElementById('water-bg');
 
-/* ===== THREE SETUP ===== */
+/* ================= SCENE ================= */
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000814);
 
-const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 50);
-camera.position.set(0, 15, 0);
-camera.lookAt(0, 0, 0);
-
-const renderer = new THREE.WebGLRenderer({ canvas: waterBg, antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
+waterContainer.appendChild(renderer.domElement);
+
+/* ================= PARAMS ================= */
+const params = {
+  waveHeight: 1.8,
+  waveSpeed: 1.0,
+  waveFreq: 0.05,
+  pulseStrength: 3.0,
+  tiltStrength: 0.25
+};
+
+/* ================= WATER ================= */
+const SIZE = 200;
+const geo = new THREE.PlaneGeometry(SIZE, SIZE, 256, 256);
+geo.rotateX(-Math.PI / 2);
+
+/* ===== Pulse storage ===== */
+const pulses = []; // {x,z,start,life}
 
 const uniforms = {
   uTime: { value: 0 },
-  uWaveHeight: { value: 1.2 },
-  uWaveSpeed: { value: 1.5 },
   uPulseTime: { value: -10 },
-  uPulseCenter: { value: new THREE.Vector2(0,0) },
-  uColor: { value: new THREE.Color('#2b8cff') }
+  uPulseCenter: { value: new THREE.Vector2() },
+  uPulseStrength: { value: params.pulseStrength },
+  uWaveHeight: { value: params.waveHeight },
+  uWaveSpeed: { value: params.waveSpeed },
+  uWaveFreq: { value: params.waveFreq }
 };
 
-const geometry = new THREE.PlaneGeometry(20, 20, 220, 220);
-
-const material = new THREE.ShaderMaterial({
+const mat = new THREE.ShaderMaterial({
   uniforms,
   vertexShader: `
-    uniform float uTime, uWaveHeight, uWaveSpeed, uPulseTime;
+    uniform float uTime;
+    uniform float uWaveHeight;
+    uniform float uWaveSpeed;
+    uniform float uWaveFreq;
+    uniform float uPulseTime;
+    uniform float uPulseStrength;
     uniform vec2 uPulseCenter;
-    varying float vWave;
+    varying float vH;
 
-    void main() {
-      vec3 pos = position;
+    void main(){
+      vec3 p = position;
 
-      float wave = sin(pos.x + uTime * uWaveSpeed)
-                 + cos(pos.y + uTime * uWaveSpeed);
+      float base =
+        sin(p.x * uWaveFreq + uTime * uWaveSpeed) +
+        cos(p.z * uWaveFreq + uTime * uWaveSpeed);
 
-      float d = distance(pos.xz, uPulseCenter);
-      float pulse = sin(d * 2.0 - (uTime - uPulseTime) * 6.0)
-                  * exp(-d * 0.25)
-                  * step(0.0, 2.5 - (uTime - uPulseTime));
+      float d = distance(p.xz, uPulseCenter);
+      float pulse =
+        sin(d * 1.5 - (uTime - uPulseTime) * 8.0)
+        * exp(-d * 0.08)
+        * uPulseStrength;
 
-      pos.y += wave * uWaveHeight + pulse * 3.0;
-      vWave = pos.y;
-
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
+      p.y += base * uWaveHeight + pulse;
+      vH = p.y;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0);
     }
   `,
   fragmentShader: `
-    uniform vec3 uColor;
-    varying float vWave;
-    void main() {
-      float shade = vWave * 0.15 + 0.6;
-      gl_FragColor = vec4(uColor * shade, 1.0);
+    varying float vH;
+    void main(){
+      vec3 deep = vec3(0.0,0.18,0.3);
+      vec3 shallow = vec3(0.35,0.65,1.0);
+      float h = clamp((vH + 3.0)/6.0,0.0,1.0);
+      gl_FragColor = vec4(mix(deep,shallow,h),1.0);
     }
-  `
+  `,
+  side: THREE.DoubleSide
 });
 
-scene.add(new THREE.Mesh(geometry, material));
+const water = new THREE.Mesh(geo, mat);
+scene.add(water);
 
-/* ===== ANIMATE ===== */
-function animate(t){
-  uniforms.uTime.value = t * 0.001;
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+/* ================= CAMERA ================= */
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
+const BASE_Y = SIZE * 0.9;
+camera.position.set(0, BASE_Y, 0);
+camera.up.set(0,0,-1);
+camera.lookAt(0,0,0);
+
+/* ================= SMOOTH TILT ================= */
+let targetX=0,targetZ=0,curX=0,curZ=0;
+addEventListener('mousemove',e=>{
+  targetZ = (e.clientX/innerWidth - 0.5)*2*params.tiltStrength;
+  targetX = (e.clientY/innerHeight - 0.5)*2*params.tiltStrength;
+});
+
+/* ================= ADD PULSE ================= */
+function addPulse(x,z){
+  pulses.push({
+    x,z,
+    start: uniforms.uTime.value,
+    life: 2 + Math.random() // 2–3s
+  });
 }
-requestAnimationFrame(animate);
 
-/* ===== RESIZE ===== */
-window.addEventListener('resize', ()=>{
-  renderer.setSize(innerWidth, innerHeight);
+/* ===== Click → pulse ===== */
+renderer.domElement.addEventListener('click',e=>{
+  const r = renderer.domElement.getBoundingClientRect();
+  const x = ((e.clientX-r.left)/r.width)*2-1;
+  const y = -((e.clientY-r.top)/r.height)*2+1;
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera({x,y},camera);
+  const hit = ray.intersectObject(water);
+  if(hit[0]) addPulse(hit[0].point.x, hit[0].point.z);
 });
 
-/* ===== PULSE ===== */
-function pulse(x,z){
-  uniforms.uPulseCenter.value.set(x,z);
-  uniforms.uPulseTime.value = uniforms.uTime.value;
-}
-
-waterBg.addEventListener('click', e=>{
-  const r = waterBg.getBoundingClientRect();
-  const x = (e.clientX/r.width)*20 - 10;
-  const z = ((r.bottom-e.clientY)/r.height)*20 - 10;
-  pulse(x,z);
-});
-
-pulseBtn.onclick = ()=> pulse(0,0);
-waveHeight.oninput = e=> uniforms.uWaveHeight.value = +e.target.value;
-waveSpeed.oninput  = e=> uniforms.uWaveSpeed.value  = +e.target.value;
-waveColor.oninput  = e=> uniforms.uColor.value.set(e.target.value);
-
-/* ===== SHOW WATER AFTER LOGIN ===== */
-const observer = new MutationObserver(()=>{
-  if (!profileCard.classList.contains("hidden")) {
-    waterBg.style.display = "block";
-    waterControls.style.display = "flex";
+/* ===== Random pulses (2/s) ===== */
+setInterval(()=>{
+  for(let i=0;i<2;i++){
+    addPulse(
+      (Math.random()-0.5)*SIZE,
+      (Math.random()-0.5)*SIZE
+    );
   }
-});
+},1000);
 
-observer.observe(profileCard, {
-  attributes: true,
-  attributeFilter: ["class"]
+/* ================= GUI ================= */
+const gui = new GUI();
+gui.add(params,'waveHeight',0,4).onChange(v=>uniforms.uWaveHeight.value=v);
+gui.add(params,'waveSpeed',0,3).onChange(v=>uniforms.uWaveSpeed.value=v);
+gui.add(params,'waveFreq',0.01,0.2).onChange(v=>uniforms.uWaveFreq.value=v);
+gui.add(params,'pulseStrength',0,6).onChange(v=>uniforms.uPulseStrength.value=v);
+gui.add(params,'tiltStrength',0,0.6);
+
+/* ================= LOOP ================= */
+function animate(t){
+  requestAnimationFrame(animate);
+  uniforms.uTime.value = t*0.001;
+
+  // remove expired pulses
+  const now = uniforms.uTime.value;
+  for(let i=pulses.length-1;i>=0;i--){
+    if(now - pulses[i].start > pulses[i].life){
+      pulses.splice(i,1);
+    }
+  }
+
+  // feed 1 pulse at a time to shader
+  if(pulses[0]){
+    uniforms.uPulseCenter.value.set(pulses[0].x, pulses[0].z);
+    uniforms.uPulseTime.value = pulses[0].start;
+  } else {
+    uniforms.uPulseTime.value = -100;
+  }
+
+  // smooth tilt
+  curX += (targetX-curX)*0.05;
+  curZ += (targetZ-curZ)*0.05;
+  camera.position.set(curZ*30, BASE_Y, -curX*30);
+  camera.lookAt(0,0,0);
+
+  renderer.render(scene,camera);
+}
+animate(0);
+
+/* ================= SHOW AFTER LOGIN ================= */
+new MutationObserver(()=>{
+  if(!document.getElementById('profile-card').classList.contains('hidden')){
+    waterContainer.style.display='block';
+  }
+}).observe(document.getElementById('profile-card'),{attributes:true});
+
+/* ================= RESIZE ================= */
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
 });
 </script>
 
 </body>
 </html>
+

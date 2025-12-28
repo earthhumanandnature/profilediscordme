@@ -228,13 +228,18 @@ function animate(t){
 animate(0);
 
 /* ===== SHOW AFTER LOGIN ===== */
-new MutationObserver(()=>{
+const observer = new MutationObserver(() => {
   const card = document.getElementById('profile-card');
-  if(card && !card.classList.contains('hidden')){
+  if (card && !card.classList.contains('hidden')) {
     waterCanvas.style.display = 'block';
     document.getElementById('water-controls').style.display = 'flex';
   }
-}).observe(document.getElementById('profile-card'), {attributes:true});
+});
+
+observer.observe(
+  document.getElementById('profile-card'),
+  { attributes: true }
+);
 
 /* ===== RESIZE ===== */
 addEventListener('resize',()=>{
@@ -246,3 +251,4 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
+

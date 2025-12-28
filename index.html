@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* ===== WATER BACKGROUND ===== */
     #water-bg {
       position: fixed;
       inset: 0;
@@ -56,90 +55,28 @@
 </head>
 <body>
 
-<!-- 🌊 WATER CANVAS -->
 <canvas id="water-bg"></canvas>
 
-<!-- 🎛 WATER CONTROLS -->
 <div id="water-controls">
-  <label>
-    Độ cao sóng
+  <label>Độ cao sóng
     <input id="waveHeight" type="range" min="0" max="3" step="0.1" value="1.2">
   </label>
-  <label>
-    Gió
+  <label>Gió
     <input id="waveSpeed" type="range" min="0" max="4" step="0.1" value="1.5">
   </label>
-  <label>
-    Màu sóng
+  <label>Màu sóng
     <input id="waveColor" type="color" value="#2b8cff">
   </label>
   <button id="pulseBtn">🌊 Tạo sóng</button>
 </div>
 
-<!-- 🎵 MUSIC -->
-<audio id="bgMusic" loop preload="auto">
-  <source src="music.mp3" type="audio/mpeg">
-</audio>
-
-<div class="container">
-
-  <!-- PROFILE CARD -->
-  <div id="profile-card" class="card hidden">
-    <div class="music-toggle" id="musicToggle">
-      <svg viewBox="0 0 24 24">
-        <path fill="currentColor"
-          d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-      </svg>
-    </div>
-
-    <div class="banner" id="banner"></div>
-
-    <div class="avatar-container">
-      <img id="avatar" class="avatar">
-      <div id="status" class="status-ring">
-        <div class="status-dot"></div>
-      </div>
-    </div>
-
-    <div class="info">
-      <h1 id="username"></h1>
-      <p class="bio" id="bio"></p>
-      <div class="badges" id="badges"></div>
-    </div>
-
-    <a class="invite-btn"
-      href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify"
-      target="_blank">
-      Xem profile của bạn
-    </a>
-  </div>
-
-  <!-- WELCOME -->
-  <div id="welcome" class="welcome">
-    <img src="loading.png" class="welcome-img">
-    <h2>Chào mừng!</h2>
-    <p>Nhấn nút bên dưới để xem profile Discord</p>
-    <a class="login-btn"
-      href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
-      Đăng nhập với Discord
-    </a>
-  </div>
-
-</div>
-
-<script src="script.js"></script>
-
-<!-- 🌊 THREE WATER -->
-
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
 
 const waterCanvas = document.getElementById('water-bg');
 
-/* ================= SCENE ================= */
+/* ===== SCENE ===== */
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000814);
 
 const renderer = new THREE.WebGLRenderer({
   canvas: waterCanvas,
@@ -149,31 +86,31 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 
-/* ================= PARAMS ================= */
+/* ===== PARAMS ===== */
 const params = {
-  waveHeight: 1.8,
-  waveSpeed: 1.0,
+  waveHeight: 1.2,
+  waveSpeed: 1.5,
   waveFreq: 0.05,
   pulseStrength: 3.0,
   tiltStrength: 0.25
 };
 
-/* ================= WATER ================= */
+/* ===== WATER ===== */
 const SIZE = 200;
 const geo = new THREE.PlaneGeometry(SIZE, SIZE, 256, 256);
 geo.rotateX(-Math.PI / 2);
 
-/* ===== Pulse storage ===== */
-const pulses = []; // {x,z,start,life}
+const pulses = [];
 
 const uniforms = {
   uTime: { value: 0 },
-  uPulseTime: { value: -10 },
+  uPulseTime: { value: -100 },
   uPulseCenter: { value: new THREE.Vector2() },
   uPulseStrength: { value: params.pulseStrength },
   uWaveHeight: { value: params.waveHeight },
   uWaveSpeed: { value: params.waveSpeed },
-  uWaveFreq: { value: params.waveFreq }
+  uWaveFreq: { value: params.waveFreq },
+  uWaveColor: { value: new THREE.Color("#2b8cff") }
 };
 
 const mat = new THREE.ShaderMaterial({
@@ -207,12 +144,13 @@ const mat = new THREE.ShaderMaterial({
     }
   `,
   fragmentShader: `
+    uniform vec3 uWaveColor;
     varying float vH;
+
     void main(){
-      vec3 deep = vec3(0.0,0.18,0.3);
-      vec3 shallow = vec3(0.35,0.65,1.0);
+      vec3 deep = vec3(0.0,0.15,0.3);
       float h = clamp((vH + 3.0)/6.0,0.0,1.0);
-      gl_FragColor = vec4(mix(deep,shallow,h),1.0);
+      gl_FragColor = vec4(mix(deep, uWaveColor, h), 1.0);
     }
   `,
   side: THREE.DoubleSide
@@ -221,30 +159,25 @@ const mat = new THREE.ShaderMaterial({
 const water = new THREE.Mesh(geo, mat);
 scene.add(water);
 
-/* ================= CAMERA ================= */
+/* ===== CAMERA ===== */
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
 const BASE_Y = SIZE * 0.9;
 camera.position.set(0, BASE_Y, 0);
 camera.up.set(0,0,-1);
 camera.lookAt(0,0,0);
 
-/* ================= SMOOTH TILT ================= */
+/* ===== SMOOTH TILT ===== */
 let targetX=0,targetZ=0,curX=0,curZ=0;
 addEventListener('mousemove',e=>{
   targetZ = (e.clientX/innerWidth - 0.5)*2*params.tiltStrength;
   targetX = (e.clientY/innerHeight - 0.5)*2*params.tiltStrength;
 });
 
-/* ================= ADD PULSE ================= */
+/* ===== PULSE ===== */
 function addPulse(x,z){
-  pulses.push({
-    x,z,
-    start: uniforms.uTime.value,
-    life: 2 + Math.random() // 2–3s
-  });
+  pulses.push({ x,z, start: uniforms.uTime.value, life: 2 + Math.random() });
 }
 
-/* ===== Click → pulse ===== */
 renderer.domElement.addEventListener('click',e=>{
   const r = renderer.domElement.getBoundingClientRect();
   const x = ((e.clientX-r.left)/r.width)*2-1;
@@ -255,38 +188,29 @@ renderer.domElement.addEventListener('click',e=>{
   if(hit[0]) addPulse(hit[0].point.x, hit[0].point.z);
 });
 
-/* ===== Random pulses (2/s) ===== */
 setInterval(()=>{
   for(let i=0;i<2;i++){
-    addPulse(
-      (Math.random()-0.5)*SIZE,
-      (Math.random()-0.5)*SIZE
-    );
+    addPulse((Math.random()-0.5)*SIZE,(Math.random()-0.5)*SIZE);
   }
 },1000);
 
-/* ================= GUI ================= */
-const gui = new GUI();
-gui.add(params,'waveHeight',0,4).onChange(v=>uniforms.uWaveHeight.value=v);
-gui.add(params,'waveSpeed',0,3).onChange(v=>uniforms.uWaveSpeed.value=v);
-gui.add(params,'waveFreq',0.01,0.2).onChange(v=>uniforms.uWaveFreq.value=v);
-gui.add(params,'pulseStrength',0,6).onChange(v=>uniforms.uPulseStrength.value=v);
-gui.add(params,'tiltStrength',0,0.6);
+/* ===== HTML CONTROLS ===== */
+waveHeight.oninput = () => uniforms.uWaveHeight.value = +waveHeight.value;
+waveSpeed.oninput  = () => uniforms.uWaveSpeed.value  = +waveSpeed.value;
+waveColor.oninput  = () => uniforms.uWaveColor.value.set(waveColor.value);
+pulseBtn.onclick   = () => addPulse(0,0);
 
-/* ================= LOOP ================= */
+/* ===== LOOP ===== */
 function animate(t){
   requestAnimationFrame(animate);
   uniforms.uTime.value = t*0.001;
 
-  // remove expired pulses
-  const now = uniforms.uTime.value;
   for(let i=pulses.length-1;i>=0;i--){
-    if(now - pulses[i].start > pulses[i].life){
+    if(uniforms.uTime.value - pulses[i].start > pulses[i].life){
       pulses.splice(i,1);
     }
   }
 
-  // feed 1 pulse at a time to shader
   if(pulses[0]){
     uniforms.uPulseCenter.value.set(pulses[0].x, pulses[0].z);
     uniforms.uPulseTime.value = pulses[0].start;
@@ -294,7 +218,6 @@ function animate(t){
     uniforms.uPulseTime.value = -100;
   }
 
-  // smooth tilt
   curX += (targetX-curX)*0.05;
   curZ += (targetZ-curZ)*0.05;
   camera.position.set(curZ*30, BASE_Y, -curX*30);
@@ -304,17 +227,16 @@ function animate(t){
 }
 animate(0);
 
-/* ================= SHOW AFTER LOGIN ================= */
-newnew MutationObserver(() => {
+/* ===== SHOW AFTER LOGIN ===== */
+new MutationObserver(()=>{
   const card = document.getElementById('profile-card');
-  if (!card.classList.contains('hidden')) {
+  if(card && !card.classList.contains('hidden')){
     waterCanvas.style.display = 'block';
+    document.getElementById('water-controls').style.display = 'flex';
   }
-}).observe(document.getElementById('profile-card'), {
-  attributes: true
-});
+}).observe(document.getElementById('profile-card'), {attributes:true});
 
-/* ================= RESIZE ================= */
+/* ===== RESIZE ===== */
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
@@ -324,8 +246,3 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
-
-
-
-
-

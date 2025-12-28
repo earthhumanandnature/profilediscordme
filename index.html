@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
-/* ===== WATER BACKGROUND ===== */
 #water-bg{
   position:fixed;
   inset:0;
@@ -55,10 +54,8 @@
 
 <body>
 
-<!-- 🌊 WATER -->
 <canvas id="water-bg"></canvas>
 
-<!-- 🎛 CONTROL -->
 <div id="water-controls">
   <label>Độ cao sóng
     <input id="waveHeight" type="range" min="0" max="4" step="0.1" value="1.8">
@@ -72,66 +69,29 @@
   <button id="pulseBtn">🌊 Tạo sóng</button>
 </div>
 
-<!-- 🎵 MUSIC -->
 <audio id="bgMusic" loop preload="auto">
   <source src="music.mp3" type="audio/mpeg">
 </audio>
 
 <div class="container">
-
-<!-- ===== PROFILE ===== -->
-<div id="profile-card" class="card hidden">
-  <div class="music-toggle" id="musicToggle">
-    <svg viewBox="0 0 24 24">
-      <path fill="currentColor"
-      d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-    </svg>
-  </div>
-
-  <div class="banner" id="banner"></div>
-
-  <div class="avatar-container">
-    <img id="avatar" class="avatar">
-    <div id="status" class="status-ring">
-      <div class="status-dot"></div>
-    </div>
-  </div>
-
-  <div class="info">
-    <h1 id="username"></h1>
-    <p class="bio" id="bio"></p>
-    <div class="badges" id="badges"></div>
-  </div>
-
-  <a class="invite-btn"
-   href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
-   Xem profile của bạn
-  </a>
+  <div id="profile-card" class="card hidden"></div>
+  <div id="welcome" class="welcome"></div>
 </div>
 
-<!-- ===== WELCOME ===== -->
-<div id="welcome" class="welcome">
-  <img src="loading.png" class="welcome-img">
-  <h2>Chào mừng!</h2>
-  <p>Nhấn nút bên dưới để xem profile Discord</p>
-  <a class="login-btn"
-   href="https://discord.com/oauth2/authorize?client_id=1416381905024323755&response_type=code&redirect_uri=https%3A%2F%2Fmydiscordprofile.vercel.app&scope=identify">
-   Đăng nhập với Discord
-  </a>
-</div>
-
-</div>
-
-<!-- LOGIN SCRIPT (GIỮ NGUYÊN) -->
 <script src="script.js"></script>
 
-<!-- 🌊 THREE WATER -->
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
+/* ===== DOM (🔥 FIX QUAN TRỌNG) ===== */
 const canvas = document.getElementById("water-bg");
 const controls = document.getElementById("water-controls");
+const waveHeight = document.getElementById("waveHeight");
+const waveSpeed = document.getElementById("waveSpeed");
+const waveColorInput = document.getElementById("waveColor");
+const pulseBtn = document.getElementById("pulseBtn");
 
+/* ===== SCENE ===== */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000814);
 
@@ -168,28 +128,27 @@ let waveColor=new THREE.Color("#2b8cff");
 const mat=new THREE.ShaderMaterial({
   uniforms,
   vertexShader:`
-  uniform float uTime,uWaveHeight,uWaveSpeed,uWaveFreq,uPulseTime,uPulseStrength;
-  uniform vec2 uPulseCenter;
-  varying float vH;
-  void main(){
-    vec3 p=position;
-    float base=sin(p.x*uWaveFreq+uTime*uWaveSpeed)
-             +cos(p.z*uWaveFreq+uTime*uWaveSpeed);
-    float d=distance(p.xz,uPulseCenter);
-    float pulse=sin(d*1.5-(uTime-uPulseTime)*8.0)
-                *exp(-d*0.08)*uPulseStrength;
-    p.y+=base*uWaveHeight+pulse;
-    vH=p.y;
-    gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
-  }`,
+    uniform float uTime,uWaveHeight,uWaveSpeed,uWaveFreq,uPulseTime,uPulseStrength;
+    uniform vec2 uPulseCenter;
+    varying float vH;
+    void main(){
+      vec3 p=position;
+      float base=sin(p.x*uWaveFreq+uTime*uWaveSpeed)
+               +cos(p.z*uWaveFreq+uTime*uWaveSpeed);
+      float d=distance(p.xz,uPulseCenter);
+      float pulse=sin(d*1.5-(uTime-uPulseTime)*8.)*exp(-d*.08)*uPulseStrength;
+      p.y+=base*uWaveHeight+pulse;
+      vH=p.y;
+      gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
+    }`,
   fragmentShader:`
-  varying float vH;
-  void main(){
-    vec3 deep=vec3(0.,.18,.3);
-    vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
-    float h=clamp((vH+3.)/6.,0.,1.);
-    gl_FragColor=vec4(mix(deep,shallow,h),1.);
-  }`,
+    varying float vH;
+    void main(){
+      vec3 deep=vec3(0.,.18,.3);
+      vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
+      float h=clamp((vH+3.)/6.,0.,1.);
+      gl_FragColor=vec4(mix(deep,shallow,h),1.);
+    }`,
   side:THREE.DoubleSide
 });
 
@@ -203,87 +162,49 @@ cam.position.set(0,BASE,0);
 cam.up.set(0,0,-1);
 cam.lookAt(0,0,0);
 
-/* ===== TILT ===== */
-let tx=0,tz=0,cx=0,cz=0;
-addEventListener("mousemove",e=>{
-  tz=(e.clientX/innerWidth-.5)*2*params.tilt;
-  tx=(e.clientY/innerHeight-.5)*2*params.tilt;
+/* ===== CONTROL (🔥 ĐÃ FIX) ===== */
+waveHeight.addEventListener("input",()=>{
+  uniforms.uWaveHeight.value=parseFloat(waveHeight.value);
 });
 
-/* ===== PULSE ===== */
-function addPulse(x,z){
-  pulses.push({x,z,start:uniforms.uTime.value,life:2+Math.random()});
-}
-
-renderer.domElement.addEventListener("click",e=>{
-  const r=renderer.domElement.getBoundingClientRect();
-  const x=((e.clientX-r.left)/r.width)*2-1;
-  const y=-((e.clientY-r.top)/r.height)*2+1;
-  const ray=new THREE.Raycaster();
-  ray.setFromCamera({x,y},cam);
-  const hit=ray.intersectObject(water);
-  if(hit[0]) addPulse(hit[0].point.x,hit[0].point.z);
+waveSpeed.addEventListener("input",()=>{
+  uniforms.uWaveSpeed.value=parseFloat(waveSpeed.value);
 });
 
-setInterval(()=>{
-  for(let i=0;i<2;i++)
-    addPulse((Math.random()-.5)*SIZE,(Math.random()-.5)*SIZE);
-},1000);
-
-/* ===== CONTROL ===== */
-waveHeight.oninput=e=>uniforms.uWaveHeight.value=e.target.value;
-waveSpeed.oninput=e=>uniforms.uWaveSpeed.value=e.target.value;
-waveColor.oninput=e=>{
-  waveColor=new THREE.Color(e.target.value);
+waveColorInput.addEventListener("input",()=>{
+  waveColor.set(waveColorInput.value);
   mat.fragmentShader=`
-  varying float vH;
-  void main(){
-    vec3 deep=vec3(0.,.18,.3);
-    vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
-    float h=clamp((vH+3.)/6.,0.,1.);
-    gl_FragColor=vec4(mix(deep,shallow,h),1.);
-  }`;
+    varying float vH;
+    void main(){
+      vec3 deep=vec3(0.,.18,.3);
+      vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
+      float h=clamp((vH+3.)/6.,0.,1.);
+      gl_FragColor=vec4(mix(deep,shallow,h),1.);
+    }`;
   mat.needsUpdate=true;
-};
-pulseBtn.onclick=()=>addPulse(0,0);
+});
+
+pulseBtn.addEventListener("click",()=>addPulse(0,0));
 
 /* ===== LOOP ===== */
+function addPulse(x,z){
+  pulses.push({x,z,start:uniforms.uTime.value,life:2});
+}
+
 function loop(t){
   requestAnimationFrame(loop);
   uniforms.uTime.value=t*.001;
-
-  for(let i=pulses.length-1;i>=0;i--)
-    if(uniforms.uTime.value-pulses[i].start>pulses[i].life)
-      pulses.splice(i,1);
-
-  if(pulses[0]){
-    uniforms.uPulseCenter.value.set(pulses[0].x,pulses[0].z);
-    uniforms.uPulseTime.value=pulses[0].start;
-  }else uniforms.uPulseTime.value=-100;
-
-  cx+=(tx-cx)*.05;
-  cz+=(tz-cz)*.05;
-  cam.position.set(cz*30,BASE,-cx*30);
-  cam.lookAt(0,0,0);
-
   renderer.render(scene,cam);
 }
 loop(0);
 
 /* ===== SHOW AFTER LOGIN ===== */
 new MutationObserver(()=>{
-  const card=document.getElementById("profile-card");
-  if(!card.classList.contains("hidden")){
+  if(!document.getElementById("profile-card").classList.contains("hidden")){
     canvas.style.display="block";
     controls.style.display="flex";
   }
 }).observe(document.getElementById("profile-card"),{attributes:true});
-
-addEventListener("resize",()=>{
-  cam.aspect=innerWidth/innerHeight;
-  cam.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
 </script>
 </body>
 </html>

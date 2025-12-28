@@ -131,6 +131,10 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 
 const canvas = document.getElementById("water-bg");
 const controls = document.getElementById("water-controls");
+const waveHeight = document.getElementById("waveHeight");
+const waveSpeed  = document.getElementById("waveSpeed");
+const waveColorInput = document.getElementById("waveColor");
+const pulseBtn   = document.getElementById("pulseBtn");
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000814);
@@ -231,21 +235,31 @@ setInterval(()=>{
 },1000);
 
 /* ===== CONTROL ===== */
-waveHeight.oninput=e=>uniforms.uWaveHeight.value=e.target.value;
-waveSpeed.oninput=e=>uniforms.uWaveSpeed.value=e.target.value;
-waveColor.oninput=e=>{
-  waveColor=new THREE.Color(e.target.value);
-  mat.fragmentShader=`
-  varying float vH;
-  void main(){
-    vec3 deep=vec3(0.,.18,.3);
-    vec3 shallow=vec3(${waveColor.r},${waveColor.g},${waveColor.b});
-    float h=clamp((vH+3.)/6.,0.,1.);
-    gl_FragColor=vec4(mix(deep,shallow,h),1.);
-  }`;
-  mat.needsUpdate=true;
-};
-pulseBtn.onclick=()=>addPulse(0,0);
+waveHeight.addEventListener("input", () => {
+  uniforms.uWaveHeight.value = parseFloat(waveHeight.value);
+});
+
+waveSpeed.addEventListener("input", () => {
+  uniforms.uWaveSpeed.value = parseFloat(waveSpeed.value);
+});
+
+waveColorInput.addEventListener("input", () => {
+  const c = new THREE.Color(waveColorInput.value);
+  mat.fragmentShader = `
+    varying float vH;
+    void main(){
+      vec3 deep = vec3(0., .18, .3);
+      vec3 shallow = vec3(${c.r}, ${c.g}, ${c.b});
+      float h = clamp((vH + 3.) / 6., 0., 1.);
+      gl_FragColor = vec4(mix(deep, shallow, h), 1.);
+    }
+  `;
+  mat.needsUpdate = true;
+});
+
+pulseBtn.addEventListener("click", () => {
+  addPulse(0, 0);
+});
 
 /* ===== LOOP ===== */
 function loop(t){
@@ -287,4 +301,5 @@ addEventListener("resize",()=>{
 </script>
 </body>
 </html>
+
 

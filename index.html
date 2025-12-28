@@ -1,256 +1,189 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Discord Profile</title>
+<meta charset="UTF-8" />
+<title>3D Water Simulation</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(#0a2342, #02101f);
+    font-family: Arial, sans-serif;
+  }
 
-  <link rel="icon" href="https://discord.com/assets/847541504914fd33810e70a0ea73177e.ico">
-  <link rel="stylesheet" href="style.css">
+  #ui {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.45);
+    padding: 12px;
+    border-radius: 10px;
+    color: #fff;
+    z-index: 10;
+  }
 
-  <style>
-    #water-bg {
-      position: fixed;
-      inset: 0;
-      z-index: -10;
-      display: none;
-    }
+  #ui label {
+    font-size: 13px;
+  }
 
-    #water-controls {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: none;
-      gap: 12px;
-      padding: 12px 16px;
-      background: rgba(0,0,0,0.45);
-      border-radius: 14px;
-      color: #fff;
-      z-index: 20;
-      align-items: center;
-      font-size: 12px;
-    }
-
-    #water-controls label {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    #water-controls input[type="range"] {
-      width: 110px;
-    }
-
-    #water-controls button {
-      background: #2b7cff;
-      color: #fff;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-  </style>
+  #ui input {
+    width: 140px;
+  }
+</style>
 </head>
 <body>
 
-<canvas id="water-bg"></canvas>
+<div id="ui">
+  <label>Sóng cao</label><br>
+  <input id="waveHeight" type="range" min="0" max="3" step="0.05" value="1"><br><br>
 
-<div id="water-controls">
-  <label>Độ cao sóng
-    <input id="waveHeight" type="range" min="0" max="3" step="0.1" value="1.2">
-  </label>
-  <label>Gió
-    <input id="waveSpeed" type="range" min="0" max="4" step="0.1" value="1.5">
-  </label>
-  <label>Màu sóng
-    <input id="waveColor" type="color" value="#2b8cff">
-  </label>
-  <button id="pulseBtn">🌊 Tạo sóng</button>
+  <label>Gió</label><br>
+  <input id="wind" type="range" min="0" max="3" step="0.05" value="1"><br><br>
+
+  <label>Tốc độ sóng</label><br>
+  <input id="speed" type="range" min="0" max="4" step="0.05" value="1">
 </div>
 
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
 
-const waterCanvas = document.getElementById('water-bg');
-
-/* ===== SCENE ===== */
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a2342);
 
-const renderer = new THREE.WebGLRenderer({
-  canvas: waterCanvas,
-  antialias: true,
-  alpha: true
-});
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+// Camera cố định từ trên xuống
+const camera = new THREE.PerspectiveCamera(
+  55,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  500
+);
+camera.position.set(0, 45, 0);
+camera.lookAt(0, 0, 0);
 
-/* ===== PARAMS ===== */
-const params = {
-  waveHeight: 1.2,
-  waveSpeed: 1.5,
-  waveFreq: 0.05,
-  pulseStrength: 3.0,
-  tiltStrength: 0.25
-};
+// Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-/* ===== WATER ===== */
-const SIZE = 200;
-const geo = new THREE.PlaneGeometry(SIZE, SIZE, 256, 256);
-geo.rotateX(-Math.PI / 2);
+// Ánh sáng
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const light = new THREE.DirectionalLight(0xffffff, 0.8);
+light.position.set(20, 40, 10);
+scene.add(light);
 
-const pulses = [];
+// Geometry mặt nước
+const size = 80;
+const segments = 180;
+const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+geometry.rotateX(-Math.PI / 2);
 
-const uniforms = {
-  uTime: { value: 0 },
-  uPulseTime: { value: -100 },
-  uPulseCenter: { value: new THREE.Vector2() },
-  uPulseStrength: { value: params.pulseStrength },
-  uWaveHeight: { value: params.waveHeight },
-  uWaveSpeed: { value: params.waveSpeed },
-  uWaveFreq: { value: params.waveFreq },
-  uWaveColor: { value: new THREE.Color("#2b8cff") }
-};
-
-const mat = new THREE.ShaderMaterial({
-  uniforms,
+// Shader
+const material = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uWaveHeight: { value: 1 },
+    uWind: { value: 1 },
+    uSpeed: { value: 1 },
+    uPulseCenter: { value: new THREE.Vector2(9999, 9999) },
+    uPulseTime: { value: -10 }
+  },
   vertexShader: `
     uniform float uTime;
     uniform float uWaveHeight;
-    uniform float uWaveSpeed;
-    uniform float uWaveFreq;
-    uniform float uPulseTime;
-    uniform float uPulseStrength;
+    uniform float uWind;
+    uniform float uSpeed;
     uniform vec2 uPulseCenter;
-    varying float vH;
+    uniform float uPulseTime;
 
-    void main(){
-      vec3 p = position;
+    varying float vHeight;
 
-      float base =
-        sin(p.x * uWaveFreq + uTime * uWaveSpeed) +
-        cos(p.z * uWaveFreq + uTime * uWaveSpeed);
+    void main() {
+      vec3 pos = position;
 
-      float d = distance(p.xz, uPulseCenter);
+      float wave =
+        sin((pos.x + uTime * uSpeed) * 0.4 * uWind) +
+        cos((pos.z + uTime * uSpeed) * 0.35 * uWind);
+
+      float dist = distance(pos.xz, uPulseCenter);
       float pulse =
-        sin(d * 1.5 - (uTime - uPulseTime) * 8.0)
-        * exp(-d * 0.08)
-        * uPulseStrength;
+        sin(dist * 1.5 - (uTime - uPulseTime) * 8.0) *
+        exp(-dist * 0.08) * 3.0;
 
-      p.y += base * uWaveHeight + pulse;
-      vH = p.y;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0);
+      if (uTime - uPulseTime > 3.0) pulse = 0.0;
+
+      pos.y += wave * uWaveHeight + pulse;
+      vHeight = pos.y;
+
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
   `,
   fragmentShader: `
-    uniform vec3 uWaveColor;
-    varying float vH;
-
-    void main(){
-      vec3 deep = vec3(0.0,0.15,0.3);
-      float h = clamp((vH + 3.0)/6.0,0.0,1.0);
-      gl_FragColor = vec4(mix(deep, uWaveColor, h), 1.0);
+    varying float vHeight;
+    void main() {
+      vec3 deep = vec3(0.0, 0.2, 0.45);
+      vec3 light = vec3(0.2, 0.6, 1.0);
+      float h = clamp(vHeight * 0.15 + 0.5, 0.0, 1.0);
+      gl_FragColor = vec4(mix(deep, light, h), 1.0);
     }
-  `,
-  side: THREE.DoubleSide
+  `
 });
 
-const water = new THREE.Mesh(geo, mat);
+const water = new THREE.Mesh(geometry, material);
 scene.add(water);
 
-/* ===== CAMERA ===== */
-const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
-const BASE_Y = SIZE * 0.9;
-camera.position.set(0, BASE_Y, 0);
-camera.up.set(0,0,-1);
-camera.lookAt(0,0,0);
+// UI controls
+const waveHeight = document.getElementById("waveHeight");
+const wind = document.getElementById("wind");
+const speed = document.getElementById("speed");
 
-/* ===== SMOOTH TILT ===== */
-let targetX=0,targetZ=0,curX=0,curZ=0;
-addEventListener('mousemove',e=>{
-  targetZ = (e.clientX/innerWidth - 0.5)*2*params.tiltStrength;
-  targetX = (e.clientY/innerHeight - 0.5)*2*params.tiltStrength;
+// Click tạo sóng
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener("click", e => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hit = raycaster.intersectObject(water);
+  if (hit.length) {
+    material.uniforms.uPulseCenter.value.set(
+      hit[0].point.x,
+      hit[0].point.z
+    );
+    material.uniforms.uPulseTime.value = clock.getElapsedTime();
+  }
 });
 
-/* ===== PULSE ===== */
-function addPulse(x,z){
-  pulses.push({ x,z, start: uniforms.uTime.value, life: 2 + Math.random() });
-}
+// Sóng ngẫu nhiên 2 cái / giây
+setInterval(() => {
+  material.uniforms.uPulseCenter.value.set(
+    (Math.random() - 0.5) * size,
+    (Math.random() - 0.5) * size
+  );
+  material.uniforms.uPulseTime.value = clock.getElapsedTime();
+}, 500);
 
-renderer.domElement.addEventListener('click',e=>{
-  const r = renderer.domElement.getBoundingClientRect();
-  const x = ((e.clientX-r.left)/r.width)*2-1;
-  const y = -((e.clientY-r.top)/r.height)*2+1;
-  const ray = new THREE.Raycaster();
-  ray.setFromCamera({x,y},camera);
-  const hit = ray.intersectObject(water);
-  if(hit[0]) addPulse(hit[0].point.x, hit[0].point.z);
-});
-
-setInterval(()=>{
-  for(let i=0;i<2;i++){
-    addPulse((Math.random()-0.5)*SIZE,(Math.random()-0.5)*SIZE);
-  }
-},1000);
-
-/* ===== HTML CONTROLS ===== */
-waveHeight.oninput = () => uniforms.uWaveHeight.value = +waveHeight.value;
-waveSpeed.oninput  = () => uniforms.uWaveSpeed.value  = +waveSpeed.value;
-waveColor.oninput  = () => uniforms.uWaveColor.value.set(waveColor.value);
-pulseBtn.onclick   = () => addPulse(0,0);
-
-/* ===== LOOP ===== */
-function animate(t){
-  requestAnimationFrame(animate);
-  uniforms.uTime.value = t*0.001;
-
-  for(let i=pulses.length-1;i>=0;i--){
-    if(uniforms.uTime.value - pulses[i].start > pulses[i].life){
-      pulses.splice(i,1);
-    }
-  }
-
-  if(pulses[0]){
-    uniforms.uPulseCenter.value.set(pulses[0].x, pulses[0].z);
-    uniforms.uPulseTime.value = pulses[0].start;
-  } else {
-    uniforms.uPulseTime.value = -100;
-  }
-
-  curX += (targetX-curX)*0.05;
-  curZ += (targetZ-curZ)*0.05;
-  camera.position.set(curZ*30, BASE_Y, -curX*30);
-  camera.lookAt(0,0,0);
-
-  renderer.render(scene,camera);
-}
-animate(0);
-
-/* ===== SHOW AFTER LOGIN ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  const target = document.getElementById('profile-card');
-  if (!target) return;
-
-  const observer = new MutationObserver(() => {
-    if (!target.classList.contains('hidden')) {
-      waterCanvas.style.display = 'block';
-      document.getElementById('water-controls').style.display = 'flex';
-    }
-  });
-
-  observer.observe(target, { attributes: true });
-});
-
-/* ===== RESIZE ===== */
-addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;
+// Resize
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
-</script>
 
+// Animate
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+
+  material.uniforms.uTime.value = clock.getElapsedTime();
+  material.uniforms.uWaveHeight.value = waveHeight.value;
+  material.uniforms.uWind.value = wind.value;
+  material.uniforms.uSpeed.value = speed.value;
+
+  renderer.render(scene, camera);
+}
+animate();
+</script>
 </body>
 </html>
-
-

@@ -228,18 +228,19 @@ function animate(t){
 animate(0);
 
 /* ===== SHOW AFTER LOGIN ===== */
-const observer = new MutationObserver(() => {
-  const card = document.getElementById('profile-card');
-  if (card && !card.classList.contains('hidden')) {
-    waterCanvas.style.display = 'block';
-    document.getElementById('water-controls').style.display = 'flex';
-  }
-});
+document.addEventListener('DOMContentLoaded', () => {
+  const target = document.getElementById('profile-card');
+  if (!target) return;
 
-observer.observe(
-  document.getElementById('profile-card'),
-  { attributes: true }
-);
+  const observer = new MutationObserver(() => {
+    if (!target.classList.contains('hidden')) {
+      waterCanvas.style.display = 'block';
+      document.getElementById('water-controls').style.display = 'flex';
+    }
+  });
+
+  observer.observe(target, { attributes: true });
+});
 
 /* ===== RESIZE ===== */
 addEventListener('resize',()=>{
@@ -251,4 +252,5 @@ addEventListener('resize',()=>{
 
 </body>
 </html>
+
 

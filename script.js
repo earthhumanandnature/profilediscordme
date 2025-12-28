@@ -38,6 +38,7 @@ else {
   .then(r => r.json())
   .then(user => {
     card.classList.remove('hidden');
+    initWaterBackground();
 
     // Avatar
     document.getElementById('avatar').src = user.avatar
@@ -108,4 +109,114 @@ if (!card.classList.contains('hidden')) {
     const y = (window.innerHeight / 2 - e.clientY) / 25;
     card.style.transform = `perspective(1400px) rotateX(${y}deg) rotateY(${x}deg) scale(1.06)`;
   };
+}
+
+// ==================== WATER BACKGROUND ====================
+let waterStarted = false;
+
+async function initWaterBackground() {
+  if (waterStarted) return;
+  waterStarted = true;
+
+  const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
+
+  const canvas = document.getElementById('water-bg');
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(devicePixelRatio);
+
+  const scene = new THREE.Scene();
+
+  const SIZE = 120;
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(0, SIZE, 0);
+  camera.up.set(0, 0, -1);
+  camera.lookAt(0, 0, 0);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+
+  const geo = new THREE.PlaneGeometry(SIZE, SIZE, 200, 200);
+
+  const uniforms = {
+    uTime: { value: 0 },
+    uPulseCenter: { value: new THREE.Vector2(9999, 9999) },
+    uPulseTime: { value: -10 }
+  };
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: `
+      uniform float uTime;
+      uniform vec2 uPulseCenter;
+      uniform float uPulseTime;
+      varying float vWave;
+
+      void main(){
+        vec3 pos = position;
+
+        float wave =
+          sin(pos.x * 0.15 + uTime * 2.0) +
+          cos(pos.y * 0.15 + uTime * 2.0);
+
+        float d = distance(pos.xy, uPulseCenter);
+        float pulse =
+          sin(d * 1.5 - (uTime - uPulseTime) * 8.0)
+          * exp(-d * 0.08)
+          * 3.0;
+
+        pos.z += wave * 0.6 + pulse;
+        vWave = pos.z;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
+      }
+    `,
+    fragmentShader: `
+      varying float vWave;
+      void main(){
+        vec3 deep = vec3(0.02,0.2,0.4);
+        vec3 light = vec3(0.2,0.6,1.0);
+        float f = clamp(vWave * 0.3 + 0.5, 0.0, 1.0);
+        gl_FragColor = vec4(mix(deep, light, f), 1.0);
+      }
+    `,
+    side: THREE.DoubleSide
+  });
+
+  const water = new THREE.Mesh(geo, mat);
+  water.rotation.x = -Math.PI / 2;
+  scene.add(water);
+
+  // CLICK → TẠO SÓNG (2–3s)
+  window.addEventListener('click', e => {
+    const x = (e.clientX / innerWidth - 0.5) * SIZE;
+    const y = (0.5 - e.clientY / innerHeight) * SIZE;
+    uniforms.uPulseCenter.value.set(x, y);
+    uniforms.uPulseTime.value = uniforms.uTime.value;
+  });
+
+  // RANDOM 2 SÓNG / GIÂY
+  setInterval(() => {
+    const x = (Math.random() - 0.5) * SIZE;
+    const y = (Math.random() - 0.5) * SIZE;
+    uniforms.uPulseCenter.value.set(x, y);
+    uniforms.uPulseTime.value = uniforms.uTime.value;
+  }, 500);
+
+  function animate(t) {
+    uniforms.uTime.value = t * 0.001;
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(innerWidth, innerHeight);
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+  });
 }

@@ -225,13 +225,15 @@ function loop(t){
 loop(0);
 
 /* ===== SHOW AFTER LOGIN ===== */
-new MutationObserver(()=>{
-  const card=document.getElementById("profile-card");
-  if(card && !card.classList.contains("hidden")){
-    canvas.style.display="block";
-    controls.style.display="flex";
-  }
-}).observe(document.getElementById("profile-card"),{attributes:true});
+const cardEl = document.getElementById("profile-card");
+if(cardEl){
+  new MutationObserver(()=>{
+    if(!cardEl.classList.contains("hidden")){
+      canvas.style.display="block";
+      controls.style.display="flex";
+    }
+  }).observe(cardEl,{attributes:true});
+}
 
 addEventListener("resize",()=>{
   cam.aspect=innerWidth/innerHeight;
@@ -241,3 +243,4 @@ addEventListener("resize",()=>{
 </script>
 </body>
 </html>
+
